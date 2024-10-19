@@ -6,7 +6,7 @@ interface HeaderProps {
 
 export function Header({ isConnected }: HeaderProps) {
     return (
-        <div className="flex-between absolute top-0 h-12 w-full border-b bg-white px-4 py-2">
+        <div className="flex-between h-12 w-full border-b bg-white px-4 py-2">
             <div className="flex items-center space-x-2">
                 {isConnected ? (
                     <Wifi

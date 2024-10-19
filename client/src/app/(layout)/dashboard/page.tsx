@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
+import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import {
@@ -241,9 +242,12 @@ export default function Page() {
 
             <Header isConnected={isConnected} />
 
+            <div className="h-full grow p-2">
+                <DroneAssets />
+            </div>
+
             {/* Left Sidebar */}
-            <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
-                {/* Persons Panel */}
+            {/* <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
                 <div className="p-4">
                     <h2 className="mb-4 flex items-center text-xl font-bold">
                         <User
@@ -278,7 +282,7 @@ export default function Page() {
                         ))}
                     </div>
                 </div>
-                {/* Drones Panel */}
+
                 <div className="border-t p-4">
                     <h2 className="mb-4 flex items-center text-xl font-bold">
                         <Plane
@@ -321,7 +325,7 @@ export default function Page() {
                         </div>
                     ))}
                 </div>
-            </div>
+            </div> */}
 
             {/* Right Sidebar */}
             <div

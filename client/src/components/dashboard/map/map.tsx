@@ -33,14 +33,14 @@ export function Map({
 
     if (!isLoaded) {
         return (
-            <div className="absolute inset-0 flex h-full items-center justify-center">
+            <div className="absolute inset-0 -z-10 flex h-full items-center justify-center">
                 <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
             </div>
         );
     }
 
     return (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 -z-10">
             <GoogleMap
                 mapContainerClassName="w-full h-full"
                 center={center}

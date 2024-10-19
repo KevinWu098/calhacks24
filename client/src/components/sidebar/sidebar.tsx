@@ -32,18 +32,11 @@ export function Sidebar({ className }: SidebarProps) {
                 className
             )}
         >
-            {/* Sidebar content */}
             <div className="flex-center pb-1">
                 <WaypointsIcon className="size-5" />
             </div>
 
             <SidebarNav />
-
-            {/* Add the toggle button */}
-            <SidebarToggle
-                isOpen={isOpen}
-                handleToggle={handleToggle}
-            />
         </nav>
     );
 }

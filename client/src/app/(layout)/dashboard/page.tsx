@@ -31,6 +31,7 @@ interface Drone {
     name: string;
     isConnected: boolean;
     batteryLevel: number;
+    startingCoordinate: string;
 }
 
 interface WebSocketData {
@@ -56,7 +57,13 @@ export default function Page() {
     const [droneFeed, setDroneFeed] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [drones, setDrones] = useState<Drone[]>([
-        { name: "Drone 1", isConnected: false, batteryLevel: 0 },
+        {
+            name: "Drone X123",
+            isConnected: false,
+            batteryLevel: 0,
+            startingCoordinate: "40.7128° N, 74.0060° W",
+        },
+        // Add more drones as needed
     ]);
     const [hazards, setHazards] = useState<Hazard[]>([
         { type: "warning", location: { lat: 0, lng: 0 } },
@@ -309,6 +316,7 @@ export default function Page() {
                     <DroneAssets
                         onDeployDrones={handleDeployDrones}
                         isDronesDeployed={isDronesDeployed}
+                        drones={drones}
                     />
                 </div>
 

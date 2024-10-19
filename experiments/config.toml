@@ -1,0 +1,25 @@
+mode="train" # train or infer
+
+[logger]
+environment="dev"
+
+[server]
+host = "localhost"
+port = 8080
+
+
+[detection_model]
+model_name = "yolo11s.pt"
+conf_threshold = 0.25
+iou_threshold = 0.45
+use_checkpoint=false
+
+[training]
+model_name = "yolo11s.pt"
+data_dir = "data"
+data_yaml = "data.yaml"
+epochs = 100
+workers = 0
+device = "cuda"
+checkpoints_dir = "checkpoints"
+checkpoint_name = "yolo11s_NP.pt"

@@ -20,6 +20,8 @@ import {
   BatteryLow,
   BatteryMedium,
   BatteryWarning,
+  AlertTriangle,
+  Flame,
 } from "lucide-react";
 
 interface Person {
@@ -41,6 +43,11 @@ interface WebSocketData {
   droneStatus: Drone;
 }
 
+interface Hazard {
+  type: "warning" | "fire";
+  location: { lat: number; lng: number };
+}
+
 function App() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [center, setCenter] = useState({ lat: 0, lng: 0 });
@@ -55,6 +62,15 @@ function App() {
   const [drones, setDrones] = useState<Drone[]>([
     { name: "Drone 1", isConnected: false, batteryLevel: 0 },
   ]);
+  const [hazards, setHazards] = useState<Hazard[]>([
+    { type: "warning", location: { lat: 0, lng: 0 } },
+    { type: "fire", location: { lat: 0, lng: 0 } },
+  ]);
+  const [selectedHazard, setSelectedHazard] = useState<Hazard | null>(null);
+  const [focusedItem, setFocusedItem] = useState<
+    "drone" | "hazard" | "person" | null
+  >(null);
+  const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
@@ -142,8 +158,71 @@ function App() {
     }
   }, [droneFeed, isRightPanelOpen]);
 
+  useEffect(() => {
+    if (currentLocation) {
+      // Set hazards with random offsets
+      const warningLocation = {
+        lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
+        lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
+      };
+
+      const fireLocation = {
+        lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
+        lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
+      };
+
+      setHazards([
+        { type: "warning", location: warningLocation },
+        { type: "fire", location: fireLocation },
+      ]);
+
+      // Set person with random offset
+      const personLocation = {
+        lat: currentLocation.lat + (Math.random() - 0.5) * 0.005,
+        lng: currentLocation.lng + (Math.random() - 0.5) * 0.005,
+      };
+
+      setPersons([
+        {
+          confidence: 0.95,
+          bbox: [personLocation.lat, personLocation.lng, 0, 0],
+          image: "",
+          timestamp: new Date().toLocaleTimeString(),
+        },
+      ]);
+    }
+  }, [currentLocation]);
+
+  const handleHazardClick = (hazard: Hazard) => {
+    setSelectedHazard(hazard);
+    setIsRightPanelOpen(true);
+    setFocusedItem("hazard");
+    if (mapRef) {
+      mapRef.panTo(hazard.location);
+      mapRef.setZoom(16);
+    }
+  };
+
+  const handlePersonClick = (person: Person) => {
+    setFocusedItem("person");
+    if (mapRef) {
+      mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
+      mapRef.setZoom(16);
+    }
+  };
+
   const handleDroneClick = () => {
     setIsRightPanelOpen(true);
+    setSelectedHazard(null);
+    setFocusedItem("drone");
+    if (mapRef && currentLocation) {
+      mapRef.panTo(currentLocation);
+      mapRef.setZoom(15);
+    }
+  };
+
+  const onMapLoad = (map: google.maps.Map) => {
+    setMapRef(map);
   };
 
   const getBatteryIcon = (level: number) => {
@@ -163,6 +242,7 @@ function App() {
             center={center}
             zoom={14}
             mapTypeId="satellite"
+            onLoad={onMapLoad}
           >
             {currentLocation && (
               <>
@@ -191,6 +271,36 @@ function App() {
                 />
               </>
             )}
+            {hazards.map((hazard, index) => (
+              <Marker
+                key={index + 99}
+                position={hazard.location}
+                onClick={() => handleHazardClick(hazard)}
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  fillColor: hazard.type === "warning" ? "yellow" : "red",
+                  fillOpacity: 1,
+                  strokeColor: "white",
+                  strokeWeight: 2,
+                  scale: 8,
+                }}
+              />
+            ))}
+            {persons.map((person, index) => (
+              <Marker
+                key={index}
+                position={{ lat: person.bbox[0], lng: person.bbox[1] }}
+                onClick={() => handlePersonClick(person)}
+                icon={{
+                  path: google.maps.SymbolPath.CIRCLE,
+                  fillColor: "blue",
+                  fillOpacity: 1,
+                  strokeColor: "white",
+                  strokeWeight: 2,
+                  scale: 8,
+                }}
+              />
+            ))}
           </GoogleMap>
         ) : (
           <div className="flex items-center justify-center h-full">
@@ -296,16 +406,37 @@ function App() {
       >
         <div className="p-4 h-full">
           <h2 className="text-xl font-bold mb-4 flex items-center">
-            <MapPin className="mr-2" size={24} />
-            Drone Feed
+            {selectedHazard ? (
+              <>
+                {selectedHazard.type === "warning" ? (
+                  <AlertTriangle className="mr-2" size={24} />
+                ) : (
+                  <Flame className="mr-2" size={24} />
+                )}
+                {selectedHazard.type === "warning" ? "Warning" : "Fire"} Hazard
+              </>
+            ) : (
+              <>
+                <MapPin className="mr-2" size={24} />
+                Drone Feed
+              </>
+            )}
           </h2>
           <div className="bg-gray-100 rounded-lg overflow-hidden">
-            <canvas
-              ref={canvasRef}
-              width="320"
-              height="240"
-              className="w-full"
-            />
+            {selectedHazard ? (
+              <img
+                src="https://example.com/placeholder-gaussian-splat-image.jpg"
+                alt="Gaussian Splat"
+                className="w-full h-auto"
+              />
+            ) : (
+              <canvas
+                ref={canvasRef}
+                width="320"
+                height="240"
+                className="w-full"
+              />
+            )}
           </div>
         </div>
 
@@ -320,6 +451,25 @@ function App() {
             <ChevronLeft size={24} />
           )}
         </button>
+      </div>
+
+      {/* Floating Hazard Panel */}
+      <div className="absolute left-80 bottom-4 bg-white rounded-lg shadow-lg p-2 flex space-x-2">
+        {hazards.map((hazard, index) => (
+          <button
+            key={index}
+            className={`p-2 rounded-full ${
+              hazard.type === "warning" ? "bg-yellow-500" : "bg-red-500"
+            } text-white`}
+            onClick={() => handleHazardClick(hazard)}
+          >
+            {hazard.type === "warning" ? (
+              <AlertTriangle size={24} />
+            ) : (
+              <Flame size={24} />
+            )}
+          </button>
+        ))}
       </div>
     </div>
   );

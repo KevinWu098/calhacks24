@@ -16,7 +16,7 @@ use_checkpoint=false
 
 [training]
 model_name = "yolo11s.pt"
-data_dir = "data"
+data_dir = "final_dataset"
 data_yaml = "data.yaml"
 epochs = 100
 workers = 0

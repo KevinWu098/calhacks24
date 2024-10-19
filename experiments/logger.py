@@ -1,7 +1,7 @@
 import os
 
 from pylogger import Logger
-from config import Config
+from myconfig import Config
 
 class Logger_py:
 

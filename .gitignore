@@ -29,3 +29,9 @@ dist-ssr
 *.pt
 
 **/*.pt
+
+
+datasets
+final_dataset
+*.env
+*/__pycache__

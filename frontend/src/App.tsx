@@ -205,6 +205,8 @@ function App() {
 
   const handlePersonClick = (person: Person) => {
     setFocusedItem("person");
+    setIsRightPanelOpen(false); // Close the right subpanel
+    setSelectedHazard(null); // Clear any selected hazard
     if (mapRef) {
       mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
       mapRef.setZoom(16);
@@ -339,7 +341,8 @@ function App() {
             {persons.map((person, index) => (
               <div
                 key={index}
-                className="bg-gray-100 rounded-lg shadow-sm overflow-hidden"
+                className="bg-gray-100 rounded-lg shadow-sm overflow-hidden cursor-pointer"
+                onClick={() => handlePersonClick(person)}
               >
                 <img
                   src={`data:image/jpeg;base64,${person.image}`}
@@ -454,7 +457,7 @@ function App() {
       </div>
 
       {/* Floating Hazard Panel */}
-      <div className="absolute left-80 bottom-4 bg-white rounded-lg shadow-lg p-2 flex space-x-2">
+      <div className="absolute left-[340px] bottom-4 bg-white rounded-lg shadow-lg p-2 flex space-x-2">
         {hazards.map((hazard, index) => (
           <button
             key={index}

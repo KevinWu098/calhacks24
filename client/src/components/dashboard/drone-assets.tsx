@@ -91,7 +91,6 @@ export function DroneAssets({
         >
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Drone Assets</p>
-                <X className="cursor-pointer text-gray-500 hover:text-gray-700" />
             </div>
             <Separator className="my-1" />
 

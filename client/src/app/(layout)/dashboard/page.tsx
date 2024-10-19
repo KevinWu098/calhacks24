@@ -7,6 +7,7 @@ import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
+import { MapOverview } from "@/components/dashboard/map/map-overview";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -553,6 +554,10 @@ export default function Page() {
                         drones={drones}
                         dataMode={dataMode}
                     />
+                </div>
+
+                <div className="absolute right-4 top-16">
+                    <MapOverview />
                 </div>
 
                 {/* Left Sidebar */}

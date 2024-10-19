@@ -228,194 +228,119 @@ export default function Page() {
     };
 
     return (
-        <div className="relative h-screen w-screen overflow-x-hidden bg-gray-100 text-gray-800">
-            <Map
-                center={center}
-                currentLocation={currentLocation}
-                persons={persons}
-                hazards={hazards}
-                handlePersonClick={handlePersonClick}
-                handleHazardClick={handleHazardClick}
-                handleDroneClick={handleDroneClick}
-                onMapLoad={onMapLoad}
-            />
-
-            <Header isConnected={isConnected} />
-
-            <div className="h-full grow p-2">
-                <DroneAssets />
+        <div className="relative h-screen w-screen overflow-hidden bg-gray-100 text-gray-800">
+            {/* Map container */}
+            <div className="absolute inset-0 z-0">
+                <Map
+                    center={center}
+                    currentLocation={currentLocation}
+                    persons={persons}
+                    hazards={hazards}
+                    handlePersonClick={handlePersonClick}
+                    handleHazardClick={handleHazardClick}
+                    handleDroneClick={handleDroneClick}
+                    onMapLoad={onMapLoad}
+                />
             </div>
 
-            {/* Left Sidebar */}
-            {/* <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
-                <div className="p-4">
-                    <h2 className="mb-4 flex items-center text-xl font-bold">
-                        <User
-                            className="mr-2"
-                            size={24}
-                        />
-                        Detected Persons
-                    </h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {persons.map((person, index) => (
-                            <div
-                                key={index}
-                                className="cursor-pointer overflow-hidden rounded-lg bg-gray-100 shadow-sm"
-                                onClick={() => handlePersonClick(person)}
-                            >
-                                <NextImage
-                                    src={`data:image/jpeg;base64,${person.image}`}
-                                    alt={`Person ${index + 1}`}
-                                    className="aspect-square w-full object-cover"
-                                    width={300}
-                                    height={300}
-                                />
-                                <div className="p-2">
-                                    <p className="text-sm text-gray-600">
-                                        {person.timestamp}
-                                    </p>
-                                    <p className="text-sm font-bold text-blue-600">
-                                        {Math.round(person.confidence * 100)}%
-                                    </p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+            {/* Overlay container for all UI elements */}
+            <div className="relative z-10 h-full w-full">
+                <Header isConnected={isConnected} />
+
+                <div className="absolute left-4 top-16 z-20">
+                    <DroneAssets />
                 </div>
 
-                <div className="border-t p-4">
-                    <h2 className="mb-4 flex items-center text-xl font-bold">
-                        <Plane
-                            className="mr-2"
-                            size={24}
-                        />
-                        Drones
-                    </h2>
-                    {drones.map((drone, index) => (
-                        <div
-                            key={index}
-                            className="mb-2 flex cursor-pointer items-center justify-between rounded-lg bg-gray-100 p-3 transition-colors duration-200 hover:bg-gray-200"
-                            onClick={handleDroneClick}
-                        >
-                            <div className="flex items-center">
-                                <Diamond
-                                    fill="currentColor"
-                                    size={20}
-                                    className="mr-2 text-blue-500"
-                                />
-                                <span>{drone.name}</span>
-                            </div>
-                            <div className="flex items-center">
-                                {drone.isConnected && (
-                                    <div className="group relative">
-                                        {getBatteryIcon(drone.batteryLevel)}
-                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                                            {drone.batteryLevel}%
-                                        </span>
-                                    </div>
-                                )}
-                                <div
-                                    className={`h-3 w-3 rounded-full ${
-                                        drone.isConnected
-                                            ? "animate-pulse bg-green-500"
-                                            : "bg-red-500"
-                                    }`}
-                                ></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div> */}
-
-            {/* Right Sidebar */}
-            <div
-                className={`absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
-                    isRightPanelOpen ? "translate-x-0" : "translate-x-full"
-                }`}
-            >
-                <div className="h-full p-4">
-                    <h2 className="mb-4 flex items-center text-xl font-bold">
-                        {selectedHazard ? (
-                            <>
-                                {selectedHazard.type === "warning" ? (
-                                    <AlertTriangle
-                                        className="mr-2"
-                                        size={24}
-                                    />
-                                ) : (
-                                    <Flame
-                                        className="mr-2"
-                                        size={24}
-                                    />
-                                )}
-                                {selectedHazard.type === "warning"
-                                    ? "Warning"
-                                    : "Fire"}{" "}
-                                Hazard
-                            </>
-                        ) : (
-                            <>
-                                <MapPin
-                                    className="mr-2"
-                                    size={24}
-                                />
-                                Drone Feed
-                            </>
-                        )}
-                    </h2>
-                    <div className="overflow-hidden rounded-lg bg-gray-100">
-                        {selectedHazard ? (
-                            // <NextImage
-                            //     src="https://example.com/placeholder-gaussian-splat-image.jpg"
-                            //     alt="Gaussian Splat"
-                            //     className="h-auto w-full"
-                            //     width={200}
-                            //     height={200}
-                            // />
-                            <div className="h-44 w-full bg-neutral-400" />
-                        ) : (
-                            <canvas
-                                ref={canvasRef}
-                                width="320"
-                                height="240"
-                                className="w-full"
-                            />
-                        )}
-                    </div>
-                </div>
-
-                {/* Toggle button for right panel */}
-                <button
-                    className={`absolute -left-10 top-1/2 z-10 -translate-y-1/2 rounded-l-md bg-white p-2 shadow-md transition-all duration-300 hover:bg-gray-100`}
-                    onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+                {/* Right Sidebar */}
+                <div
+                    className={`absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                        isRightPanelOpen ? "translate-x-0" : "translate-x-full"
+                    }`}
                 >
-                    {isRightPanelOpen ? (
-                        <ChevronRight size={24} />
-                    ) : (
-                        <ChevronLeft size={24} />
-                    )}
-                </button>
-            </div>
+                    <div className="h-full p-4">
+                        <h2 className="mb-4 flex items-center text-xl font-bold">
+                            {selectedHazard ? (
+                                <>
+                                    {selectedHazard.type === "warning" ? (
+                                        <AlertTriangle
+                                            className="mr-2"
+                                            size={24}
+                                        />
+                                    ) : (
+                                        <Flame
+                                            className="mr-2"
+                                            size={24}
+                                        />
+                                    )}
+                                    {selectedHazard.type === "warning"
+                                        ? "Warning"
+                                        : "Fire"}{" "}
+                                    Hazard
+                                </>
+                            ) : (
+                                <>
+                                    <MapPin
+                                        className="mr-2"
+                                        size={24}
+                                    />
+                                    Drone Feed
+                                </>
+                            )}
+                        </h2>
+                        <div className="overflow-hidden rounded-lg bg-gray-100">
+                            {selectedHazard ? (
+                                // <NextImage
+                                //     src="https://example.com/placeholder-gaussian-splat-image.jpg"
+                                //     alt="Gaussian Splat"
+                                //     className="h-auto w-full"
+                                //     width={200}
+                                //     height={200}
+                                // />
+                                <div className="h-44 w-full bg-neutral-400" />
+                            ) : (
+                                <canvas
+                                    ref={canvasRef}
+                                    width="320"
+                                    height="240"
+                                    className="w-full"
+                                />
+                            )}
+                        </div>
+                    </div>
 
-            {/* Floating Hazard Panel */}
-            <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                {hazards.map((hazard, index) => (
+                    {/* Toggle button for right panel */}
                     <button
-                        key={index}
-                        className={`rounded-full p-2 ${
-                            hazard.type === "warning"
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
-                        } text-white`}
-                        onClick={() => handleHazardClick(hazard)}
+                        className={`absolute -left-10 top-1/2 z-10 -translate-y-1/2 rounded-l-md bg-white p-2 shadow-md transition-all duration-300 hover:bg-gray-100`}
+                        onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
                     >
-                        {hazard.type === "warning" ? (
-                            <AlertTriangle size={24} />
+                        {isRightPanelOpen ? (
+                            <ChevronRight size={24} />
                         ) : (
-                            <Flame size={24} />
+                            <ChevronLeft size={24} />
                         )}
                     </button>
-                ))}
+                </div>
+
+                {/* Floating Hazard Panel */}
+                <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
+                    {hazards.map((hazard, index) => (
+                        <button
+                            key={index}
+                            className={`rounded-full p-2 ${
+                                hazard.type === "warning"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                            } text-white`}
+                            onClick={() => handleHazardClick(hazard)}
+                        >
+                            {hazard.type === "warning" ? (
+                                <AlertTriangle size={24} />
+                            ) : (
+                                <Flame size={24} />
+                            )}
+                        </button>
+                    ))}
+                </div>
             </div>
         </div>
     );

@@ -40,7 +40,7 @@ export function Map({
     }
 
     return (
-        <div className="absolute inset-0 -z-10">
+        <div className="absolute inset-0 z-0">
             <GoogleMap
                 mapContainerClassName="w-full h-full"
                 center={center}

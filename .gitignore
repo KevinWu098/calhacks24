@@ -29,3 +29,7 @@ dist-ssr
 *.pt
 
 **/*.pt
+
+**/.env
+
+.env

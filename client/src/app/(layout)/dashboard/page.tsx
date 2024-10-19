@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
+import { ActiveDrones } from "@/components/dashboard/ActiveDrones";
+import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
@@ -18,6 +20,8 @@ import {
     MapPin,
     Plane,
     User,
+    Wifi,
+    WifiOff,
 } from "lucide-react";
 
 export interface Person {
@@ -76,6 +80,7 @@ export default function Page() {
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
     const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
+    const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
 
     useEffect(() => {
         const socket = new WebSocket("ws://localhost:8000/ws");
@@ -238,6 +243,7 @@ export default function Page() {
 
     const handleDeployDrones = useCallback(() => {
         setIsDronesDeployed(true);
+        setIsLeftPanelVisible(true);
 
         // Smoothly zoom in on the drone location
         if (mapRef && currentLocation) {
@@ -317,6 +323,24 @@ export default function Page() {
                         onDeployDrones={handleDeployDrones}
                         isDronesDeployed={isDronesDeployed}
                         drones={drones}
+                    />
+                </div>
+
+                {/* Left Sidebar */}
+                <div
+                    className={`absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
+                        isLeftPanelVisible
+                            ? "translate-x-0"
+                            : "-translate-x-full"
+                    }`}
+                >
+                    <DetectedPersons
+                        persons={persons}
+                        handlePersonClick={handlePersonClick}
+                    />
+                    <ActiveDrones
+                        drones={drones}
+                        handleDroneClick={handleDroneClick}
                     />
                 </div>
 

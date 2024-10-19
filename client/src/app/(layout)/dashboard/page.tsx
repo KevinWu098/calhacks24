@@ -8,6 +8,7 @@ import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
+import { Nav } from "@/components/dashboard/nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -540,11 +541,17 @@ export default function Page() {
             {/* Overlay container for all UI elements */}
             <div className="pointer-events-none relative z-10 h-full w-full">
                 <div className="pointer-events-auto">
-                    <Header
+                    <Nav
                         isConnected={isConnected}
                         dataMode={dataMode}
                         toggleDataMode={toggleDataMode}
                     />
+
+                    {/* <Header
+                        isConnected={isConnected}
+                        dataMode={dataMode}
+                        toggleDataMode={toggleDataMode}
+                    /> */}
                 </div>
 
                 <div className="pointer-events-auto absolute left-4 top-16 z-20">

@@ -10,7 +10,7 @@ import {
 
 interface ActiveDronesProps {
     drones: Drone[];
-    handleDroneClick: () => void;
+    handleDroneClick: (droneName: string) => void;
 }
 
 export function ActiveDrones({ drones, handleDroneClick }: ActiveDronesProps) {
@@ -34,7 +34,7 @@ export function ActiveDrones({ drones, handleDroneClick }: ActiveDronesProps) {
                 <div
                     key={index}
                     className="mb-2 flex cursor-pointer items-center justify-between rounded-lg bg-gray-100 p-3 transition-colors duration-200 hover:bg-gray-200"
-                    onClick={handleDroneClick}
+                    onClick={() => handleDroneClick(drone.name)}
                 >
                     <div className="flex items-center">
                         <Diamond

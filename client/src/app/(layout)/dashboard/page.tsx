@@ -33,11 +33,12 @@ export interface Person {
     timestamp: string;
 }
 
-interface Drone {
+export interface Drone {
     name: string;
     isConnected: boolean;
     batteryLevel: number;
     startingCoordinate: string;
+    location: { lat: number; lng: number };
 }
 
 interface WebSocketData {
@@ -55,6 +56,9 @@ export interface Hazard {
     createdAt: Date;
 }
 
+// Add this new type definition
+type DataMode = "fake" | "real";
+
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
     const [center, setCenter] = useState({ lat: 0, lng: 0 });
@@ -66,33 +70,8 @@ export default function Page() {
     } | null>(null);
     const [droneFeed, setDroneFeed] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [drones, setDrones] = useState<Drone[]>([
-        {
-            name: "Drone X123",
-            isConnected: false,
-            batteryLevel: 0,
-            startingCoordinate: "40.7128° N, 74.0060° W",
-        },
-        // Add more drones as needed
-    ]);
-    const [hazards, setHazards] = useState<Hazard[]>([
-        {
-            type: "warning",
-            location: { lat: 0, lng: 0 },
-            severity: "Low",
-            details: "",
-            createdBy: "",
-            createdAt: new Date(),
-        },
-        {
-            type: "fire",
-            location: { lat: 0, lng: 0 },
-            severity: "Critical",
-            details: "",
-            createdBy: "",
-            createdAt: new Date(),
-        },
-    ]);
+    const [drones, setDrones] = useState<Drone[]>([]);
+    const [hazards, setHazards] = useState<Hazard[]>([]);
     const [selectedHazard, setSelectedHazard] = useState<Hazard | null>(null);
     const [_focusedItem, setFocusedItem] = useState<
         "drone" | "hazard" | "person" | null
@@ -101,54 +80,207 @@ export default function Page() {
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
     const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
+    const [dataMode, setDataMode] = useState<DataMode>("real");
 
+    // Add fake data
+    const fakeDrones: Drone[] = [
+        {
+            name: "Drone X123",
+            isConnected: true,
+            batteryLevel: 85,
+            startingCoordinate: "40.7128° N, 74.0060° W",
+            location: { lat: 40.7128, lng: -74.006 },
+        },
+        {
+            name: "Drone Y456",
+            isConnected: true,
+            batteryLevel: 72,
+            startingCoordinate: "34.0522° N, 118.2437° W",
+            location: { lat: 34.0522, lng: -118.2437 },
+        },
+        {
+            name: "Drone Z789",
+            isConnected: true,
+            batteryLevel: 93,
+            startingCoordinate: "51.5074° N, 0.1278° W",
+            location: { lat: 51.5074, lng: -0.1278 },
+        },
+        {
+            name: "Drone A012",
+            isConnected: true,
+            batteryLevel: 64,
+            startingCoordinate: "35.6762° N, 139.6503° E",
+            location: { lat: 35.6762, lng: 139.6503 },
+        },
+    ];
+
+    const fakeHazards: Hazard[] = [
+        {
+            type: "warning",
+            location: { lat: 0, lng: 0 },
+            severity: "Low",
+            details: "Potential hazard detected",
+            createdBy: "AI System",
+            createdAt: new Date(),
+        },
+        {
+            type: "fire",
+            location: { lat: 0, lng: 0 },
+            severity: "Critical",
+            details: "Active fire detected",
+            createdBy: "Thermal Sensor",
+            createdAt: new Date(),
+        },
+    ];
+
+    // Update the fakeDrones array to be a function that generates drones based on current location
+    const generateFakeDrones = useCallback(
+        (center: { lat: number; lng: number }): Drone[] => {
+            return [
+                {
+                    name: "Drone X123",
+                    isConnected: true,
+                    batteryLevel: 85,
+                    startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+                {
+                    name: "Drone Y456",
+                    isConnected: true,
+                    batteryLevel: 72,
+                    startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+                {
+                    name: "Drone Z789",
+                    isConnected: true,
+                    batteryLevel: 93,
+                    startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+                {
+                    name: "Drone A012",
+                    isConnected: true,
+                    batteryLevel: 64,
+                    startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+            ];
+        },
+        []
+    );
+
+    // Modify the useEffect for WebSocket to use real data when in "real" mode
     useEffect(() => {
-        const socket = new WebSocket("ws://localhost:8000/ws");
+        if (dataMode === "real") {
+            const socket = new WebSocket("ws://localhost:8000/ws");
 
-        socket.onopen = () => {
-            console.log("WebSocket connection established");
-            setIsConnected(true);
-        };
+            socket.onopen = () => {
+                console.log("WebSocket connection established");
+                setIsConnected(true);
+            };
 
-        socket.onmessage = (event) => {
-            const data: WebSocketData = JSON.parse(event.data);
-            setPersons((prevPersons) => {
-                const lastPerson = data.persons[data.persons.length - 1];
-                if (lastPerson) {
-                    return [
-                        {
-                            ...lastPerson,
-                            image: data.frame,
-                            timestamp: new Date().toLocaleTimeString(),
-                        },
-                    ];
-                }
-                return prevPersons;
-            });
-            setDroneFeed(data.frame);
+            socket.onmessage = (event) => {
+                const data: WebSocketData = JSON.parse(event.data);
+                setPersons((prevPersons) => {
+                    const lastPerson = data.persons[data.persons.length - 1];
+                    if (lastPerson) {
+                        return [
+                            {
+                                ...lastPerson,
+                                image: data.frame,
+                                timestamp: new Date().toLocaleTimeString(),
+                            },
+                        ];
+                    }
+                    return prevPersons;
+                });
+                setDroneFeed(data.frame);
 
-            // Update drone status and battery level
-            setDrones((prevDrones) => {
-                return prevDrones.map((drone) =>
-                    drone.name === data.droneStatus.name
-                        ? data.droneStatus
-                        : drone
-                );
-            });
-        };
+                // Update drone status and battery level
+                setDrones((prevDrones) => {
+                    const existingDrone = prevDrones.find(
+                        (d) => d.name === data.droneStatus.name
+                    );
+                    if (existingDrone) {
+                        return prevDrones.map((drone) =>
+                            drone.name === data.droneStatus.name
+                                ? data.droneStatus
+                                : drone
+                        );
+                    } else {
+                        return [...prevDrones, data.droneStatus];
+                    }
+                });
+            };
 
-        socket.onclose = () => {
-            console.log("WebSocket connection closed");
-            setIsConnected(false);
-            // Disconnect all drones when WebSocket disconnects
-            setDrones((prevDrones) =>
-                prevDrones.map((drone) => ({ ...drone, isConnected: false }))
-            );
-        };
+            socket.onclose = () => {
+                console.log("WebSocket connection closed");
+                setIsConnected(false);
+                setDrones([]);
+            };
 
-        return () => {
-            socket.close();
-        };
+            return () => {
+                socket.close();
+            };
+        }
+    }, [dataMode]);
+
+    // Modify the useEffect for setting hazards and drones to use fake data when in "fake" mode
+    useEffect(() => {
+        if (currentLocation) {
+            if (dataMode === "fake") {
+                // Set hazards with random offsets
+                const updatedFakeHazards = fakeHazards.map((hazard) => ({
+                    ...hazard,
+                    location: {
+                        lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
+                        lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                }));
+                setHazards(updatedFakeHazards);
+
+                // Set fake drones around the current location
+                setDrones(generateFakeDrones(currentLocation));
+
+                // Set person with random offset
+                const personLocation = {
+                    lat: currentLocation.lat + (Math.random() - 0.5) * 0.005,
+                    lng: currentLocation.lng + (Math.random() - 0.5) * 0.005,
+                };
+
+                setPersons([
+                    {
+                        confidence: 0.95,
+                        bbox: [personLocation.lat, personLocation.lng, 0, 0],
+                        image: "",
+                        timestamp: new Date().toLocaleTimeString(),
+                    },
+                ]);
+            } else {
+                // Clear fake data when in real mode
+                setHazards([]);
+                setPersons([]);
+                setDrones([]);
+            }
+        }
+    }, [currentLocation, dataMode, generateFakeDrones]);
+
+    // Add a toggle function for data mode
+    const toggleDataMode = useCallback(() => {
+        setDataMode((prevMode) => (prevMode === "fake" ? "real" : "fake"));
     }, []);
 
     useEffect(() => {
@@ -185,55 +317,6 @@ export default function Page() {
         }
     }, [droneFeed, isRightPanelOpen]);
 
-    useEffect(() => {
-        if (currentLocation) {
-            // Set hazards with random offsets
-            const warningLocation = {
-                lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
-                lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
-            };
-
-            const fireLocation = {
-                lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
-                lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
-            };
-
-            setHazards([
-                {
-                    type: "warning",
-                    location: warningLocation,
-                    severity: "Low",
-                    details: "",
-                    createdBy: "",
-                    createdAt: new Date(),
-                },
-                {
-                    type: "fire",
-                    location: fireLocation,
-                    severity: "Critical",
-                    details: "",
-                    createdBy: "",
-                    createdAt: new Date(),
-                },
-            ]);
-
-            // Set person with random offset
-            const personLocation = {
-                lat: currentLocation.lat + (Math.random() - 0.5) * 0.005,
-                lng: currentLocation.lng + (Math.random() - 0.5) * 0.005,
-            };
-
-            setPersons([
-                {
-                    confidence: 0.95,
-                    bbox: [personLocation.lat, personLocation.lng, 0, 0],
-                    image: "",
-                    timestamp: new Date().toLocaleTimeString(),
-                },
-            ]);
-        }
-    }, [currentLocation]);
-
     const handleHazardClick = (hazard: Hazard) => {
         setSelectedHazard(hazard);
         setIsRightPanelOpen(true);
@@ -254,12 +337,13 @@ export default function Page() {
         }
     };
 
-    const handleDroneClick = () => {
+    const handleDroneClick = (droneName: string) => {
         setIsRightPanelOpen(true);
         setSelectedHazard(null);
         setFocusedItem("drone");
-        if (mapRef && currentLocation) {
-            mapRef.panTo(currentLocation);
+        const clickedDrone = drones.find((drone) => drone.name === droneName);
+        if (mapRef && clickedDrone && "location" in clickedDrone) {
+            mapRef.panTo(clickedDrone.location);
             mapRef.setZoom(15);
         }
     };
@@ -285,12 +369,17 @@ export default function Page() {
             mapRef.setZoom(15);
         }
 
-        // Simulate drone deployment
-        setTimeout(() => {
-            setDrones((prevDrones) =>
-                prevDrones.map((drone) => ({ ...drone, isConnected: true }))
-            );
-        }, 1000);
+        if (dataMode === "fake") {
+            // For fake mode, immediately set the drones
+            setDrones(generateFakeDrones(currentLocation!));
+        } else {
+            // For real mode, simulate drone deployment (keep existing logic)
+            setTimeout(() => {
+                setDrones((prevDrones) =>
+                    prevDrones.map((drone) => ({ ...drone, isConnected: true }))
+                );
+            }, 1000);
+        }
 
         // Simulate person detection
         setTimeout(() => {
@@ -336,7 +425,7 @@ export default function Page() {
                 },
             ]);
         }, 5000);
-    }, [center, currentLocation, mapRef]);
+    }, [currentLocation, dataMode, generateFakeDrones, mapRef]);
 
     const getSeverityColor = (severity: Hazard["severity"]) => {
         switch (severity) {
@@ -355,6 +444,16 @@ export default function Page() {
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
+            {/* Add the toggle button for data mode */}
+            <button
+                className="absolute right-4 top-20 z-50 rounded-md bg-blue-500 px-4 py-2 text-white shadow-md"
+                onClick={toggleDataMode}
+            >
+                {dataMode === "fake"
+                    ? "Switch to Real Data"
+                    : "Switch to Fake Data"}
+            </button>
+
             {/* Map container */}
             <div className="absolute inset-0 z-0">
                 <Map
@@ -364,6 +463,7 @@ export default function Page() {
                     currentLocation={isDronesDeployed ? currentLocation : null}
                     persons={isDronesDeployed ? persons : []}
                     hazards={isDronesDeployed ? hazards : []}
+                    drones={isDronesDeployed ? drones : []}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}

@@ -14,9 +14,10 @@ interface MapProps {
     currentLocation: { lat: number; lng: number } | null;
     persons: Person[];
     hazards: Hazard[];
+    drones: { name: string; location: { lat: number; lng: number } }[];
     handlePersonClick: (person: Person) => void;
     handleHazardClick: (hazard: Hazard) => void;
-    handleDroneClick: VoidFunction;
+    handleDroneClick: (droneName: string) => void;
     onMapLoad: (map: google.maps.Map) => void;
 }
 
@@ -27,6 +28,7 @@ export function Map({
     currentLocation,
     persons,
     hazards,
+    drones,
     handlePersonClick,
     handleHazardClick,
     handleDroneClick,
@@ -131,6 +133,22 @@ export function Map({
                         icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             fillColor: "blue",
+                            fillOpacity: 1,
+                            strokeColor: "white",
+                            strokeWeight: 2,
+                            scale: 8,
+                        }}
+                    />
+                ))}
+
+                {drones.map((drone, index) => (
+                    <Marker
+                        key={`drone-${index}`}
+                        position={drone.location}
+                        onClick={() => handleDroneClick(drone.name)}
+                        icon={{
+                            path: google.maps.SymbolPath.CIRCLE,
+                            fillColor: "lime",
                             fillOpacity: 1,
                             strokeColor: "white",
                             strokeWeight: 2,

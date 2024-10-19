@@ -7,8 +7,11 @@ import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
+import { MapOverview } from "@/components/dashboard/map/map-overview";
+import { Nav } from "@/components/dashboard/nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
     AlertTriangle,
@@ -22,12 +25,14 @@ import {
     Flame,
     MapPin,
     Plane,
+    Route,
     User,
     Wifi,
     WifiOff,
 } from "lucide-react";
 
 export interface Person {
+    id: string;
     confidence: number;
     bbox: [number, number, number, number];
     image: string;
@@ -82,6 +87,9 @@ export default function Page() {
     const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
     const [dataMode, setDataMode] = useState<DataMode>("fake");
+    const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
+    const [rescueRoute, setRescueRoute] = useState<google.maps.LatLng[]>([]);
+    const [selectMode, setSelectMode] = useState(false);
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -244,32 +252,51 @@ export default function Page() {
         if (currentLocation) {
             if (dataMode === "fake") {
                 // Set hazards with random offsets
-                const updatedFakeHazards = fakeHazards.map((hazard) => ({
-                    ...hazard,
-                    location: {
-                        lat: currentLocation.lat + (Math.random() - 0.5) * 0.01,
-                        lng: currentLocation.lng + (Math.random() - 0.5) * 0.01,
+                setHazards([
+                    {
+                        type: "warning",
+                        location: {
+                            lat: center.lat + (Math.random() - 0.5) * 0.01,
+                            lng: center.lng + (Math.random() - 0.5) * 0.01,
+                        },
+                        severity: "Low",
+                        details: "",
+                        createdBy: "",
+                        createdAt: new Date(),
                     },
-                }));
-                setHazards(updatedFakeHazards);
+                    {
+                        type: "fire",
+                        location: {
+                            lat: center.lat + (Math.random() - 0.5) * 0.01,
+                            lng: center.lng + (Math.random() - 0.5) * 0.01,
+                        },
+                        severity: "Critical",
+                        details: "",
+                        createdBy: "",
+                        createdAt: new Date(),
+                    },
+                ]);
 
                 // Set fake drones around the current location
                 setDrones(generateFakeDrones(currentLocation));
 
-                // Set person with random offset
-                const personLocation = {
-                    lat: currentLocation.lat + (Math.random() - 0.5) * 0.005,
-                    lng: currentLocation.lng + (Math.random() - 0.5) * 0.005,
-                };
-
-                setPersons([
-                    {
+                // Set persons with random offsets
+                const newPersons: Person[] = Array(5)
+                    .fill(null)
+                    .map(() => ({
+                        id: crypto.randomUUID(),
                         confidence: 0.95,
-                        bbox: [personLocation.lat, personLocation.lng, 0, 0],
+                        bbox: [
+                            center.lat + (Math.random() - 0.5) * 0.01,
+                            center.lng + (Math.random() - 0.5) * 0.01,
+                            0,
+                            0,
+                        ],
                         image: "",
                         timestamp: new Date().toLocaleTimeString(),
-                    },
-                ]);
+                    }));
+                console.log(newPersons);
+                setPersons(newPersons);
             } else {
                 // Clear fake data when in real mode
                 setHazards([]);
@@ -294,15 +321,14 @@ export default function Page() {
                     };
                     setCenter(newCenter);
                     setCurrentLocation(newCenter);
+                    if (dataMode === "fake") {
+                        setDrones(generateFakeDrones(newCenter));
+                    }
                 },
                 () => {
                     console.log("Unable to retrieve your location");
                 }
             );
-
-            if (dataMode === "fake") {
-                setDrones(generateFakeDrones(currentLocation!));
-            }
         }
     }, []);
 
@@ -332,15 +358,50 @@ export default function Page() {
         }
     };
 
-    const handlePersonClick = (person: Person) => {
-        setFocusedItem("person");
-        setIsRightPanelOpen(false); // Close the right subpanel
-        setSelectedHazard(null); // Clear any selected hazard
-        if (mapRef) {
-            mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
-            mapRef.setZoom(16);
-        }
-    };
+    const handlePersonSelection = useCallback(
+        (person: Person, multiSelect: boolean) => {
+            console.log(
+                "Selecting person:",
+                person.id,
+                "Multi-select:",
+                multiSelect
+            );
+            setSelectedPersons((prev) => {
+                const isSelected = prev.some((p) => p.id === person.id);
+                console.log("Is already selected:", isSelected);
+                if (isSelected) {
+                    return prev.filter((p) => p.id !== person.id);
+                } else {
+                    const newSelection = multiSelect
+                        ? [...prev, person]
+                        : [person];
+                    console.log(
+                        "New selection:",
+                        newSelection.map((p) => p.id)
+                    );
+                    return newSelection;
+                }
+            });
+        },
+        []
+    );
+
+    const handlePersonClick = useCallback(
+        (person: Person) => {
+            if (selectMode) {
+                handlePersonSelection(person, false);
+            } else {
+                setFocusedItem("person");
+                setIsRightPanelOpen(false);
+                setSelectedHazard(null);
+                if (mapRef) {
+                    mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
+                    mapRef.setZoom(16);
+                }
+            }
+        },
+        [selectMode, handlePersonSelection, mapRef]
+    );
 
     const handleDroneClick = (droneName: string) => {
         setIsRightPanelOpen(true);
@@ -387,50 +448,15 @@ export default function Page() {
             }, 1000);
         }
 
-        // Simulate person detection
-        setTimeout(() => {
-            setPersons([
-                {
-                    confidence: 0.95,
-                    bbox: [
-                        center.lat + (Math.random() - 0.5) * 0.005,
-                        center.lng + (Math.random() - 0.5) * 0.005,
-                        0,
-                        0,
-                    ],
-                    image: "",
-                    timestamp: new Date().toLocaleTimeString(),
-                },
-            ]);
-        }, 3000);
+        // Simulate multiple person detections
+        // setTimeout(() => {
+
+        //}, 3000);
 
         // Simulate hazard detection
-        setTimeout(() => {
-            setHazards([
-                {
-                    type: "warning",
-                    location: {
-                        lat: center.lat + (Math.random() - 0.5) * 0.01,
-                        lng: center.lng + (Math.random() - 0.5) * 0.01,
-                    },
-                    severity: "Low",
-                    details: "",
-                    createdBy: "",
-                    createdAt: new Date(),
-                },
-                {
-                    type: "fire",
-                    location: {
-                        lat: center.lat + (Math.random() - 0.5) * 0.01,
-                        lng: center.lng + (Math.random() - 0.5) * 0.01,
-                    },
-                    severity: "Critical",
-                    details: "",
-                    createdBy: "",
-                    createdAt: new Date(),
-                },
-            ]);
-        }, 5000);
+        // setTimeout(() => {
+
+        // }, 5000);
     }, [currentLocation, dataMode, generateFakeDrones, mapRef]);
 
     const getSeverityColor = (severity: Hazard["severity"]) => {
@@ -448,6 +474,48 @@ export default function Page() {
         }
     };
 
+    const planRescueRoute = useCallback(() => {
+        if (currentLocation && selectedPersons.length > 0 && mapRef) {
+            const directionsService = new google.maps.DirectionsService();
+            const waypoints = selectedPersons.map((person) => ({
+                location: new google.maps.LatLng(
+                    person.bbox[0],
+                    person.bbox[1]
+                ),
+                stopover: true,
+            }));
+
+            directionsService.route(
+                {
+                    origin: new google.maps.LatLng(
+                        currentLocation.lat,
+                        currentLocation.lng
+                    ),
+                    destination: new google.maps.LatLng(
+                        currentLocation.lat,
+                        currentLocation.lng
+                    ),
+                    waypoints: waypoints,
+                    optimizeWaypoints: true,
+                    travelMode: google.maps.TravelMode.WALKING,
+                },
+                (result, status) => {
+                    if (status === google.maps.DirectionsStatus.OK && result) {
+                        const route = result.routes[0].overview_path;
+                        setRescueRoute(route);
+                    }
+                }
+            );
+        }
+    }, [currentLocation, selectedPersons, mapRef]);
+
+    const toggleSelectMode = useCallback(() => {
+        setSelectMode((prev) => !prev);
+        if (selectMode) {
+            setSelectedPersons([]);
+        }
+    }, [selectMode]);
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
             {/* Map container */}
@@ -464,17 +532,26 @@ export default function Page() {
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}
                     onMapLoad={onMapLoad}
+                    rescueRoute={rescueRoute}
+                    selectMode={selectMode}
+                    selectedPersons={selectedPersons}
                 />
             </div>
 
             {/* Overlay container for all UI elements */}
             <div className="pointer-events-none relative z-10 h-full w-full">
                 <div className="pointer-events-auto">
-                    <Header
+                    <Nav
                         isConnected={isConnected}
                         dataMode={dataMode}
                         toggleDataMode={toggleDataMode}
                     />
+
+                    {/* <Header
+                        isConnected={isConnected}
+                        dataMode={dataMode}
+                        toggleDataMode={toggleDataMode}
+                    /> */}
                 </div>
 
                 <div className="pointer-events-auto absolute left-4 top-16 z-20">
@@ -484,6 +561,10 @@ export default function Page() {
                         drones={drones}
                         dataMode={dataMode}
                     />
+                </div>
+
+                <div className="absolute right-4 top-16">
+                    <MapOverview />
                 </div>
 
                 {/* Left Sidebar */}
@@ -497,6 +578,11 @@ export default function Page() {
                     <DetectedPersons
                         persons={persons}
                         handlePersonClick={handlePersonClick}
+                        selectedPersons={selectedPersons}
+                        handlePersonSelection={handlePersonSelection}
+                        planRescueRoute={planRescueRoute}
+                        selectMode={selectMode}
+                        toggleSelectMode={toggleSelectMode}
                     />
                     <ActiveDrones
                         drones={drones}

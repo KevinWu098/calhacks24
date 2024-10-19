@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 import {
     Battery,
     BatteryFull,
@@ -33,6 +34,7 @@ export function DroneAssets({
     drones,
     dataMode,
 }: DroneAssetsProps) {
+    const [activeDrones, setActiveDrones] = useState<string[]>([]);
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
@@ -49,6 +51,21 @@ export function DroneAssets({
         if (level > 70) return <BatteryMedium />;
         if (level > 30) return <BatteryLow />;
         return <BatteryWarning />;
+    };
+
+    const handleClickDrone = (droneName: string) => {
+        setActiveDrones((prev) => {
+            const output = [...prev];
+            const index = prev.indexOf(droneName);
+
+            if (index >= 0) {
+                output.splice(index, 1);
+            } else {
+                output.push(droneName);
+            }
+
+            return output;
+        });
     };
 
     const dronesToDisplay =
@@ -91,7 +108,6 @@ export function DroneAssets({
         >
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Drone Assets</p>
-                <X className="cursor-pointer text-gray-500 hover:text-gray-700" />
             </div>
             <Separator className="my-1" />
 
@@ -99,7 +115,11 @@ export function DroneAssets({
                 {dronesToDisplay.map((drone, index) => (
                     <div
                         key={index}
-                        className="flex items-center space-x-3 rounded-lg border p-2"
+                        className={cn(
+                            "flex cursor-pointer items-center space-x-3 rounded-lg border p-2",
+                            activeDrones.includes(drone.name) && "bg-blue-200"
+                        )}
+                        onClick={() => handleClickDrone(drone.name)}
                     >
                         <Image
                             src="/drone.png"
@@ -142,10 +162,10 @@ export function DroneAssets({
                 <Button
                     className="w-full bg-blue-500 text-white hover:bg-blue-600"
                     onClick={onDeployDrones}
-                    disabled={isDronesDeployed}
+                    disabled={isDronesDeployed || activeDrones.length <= 0}
                 >
                     <p className="text-lg font-semibold">
-                        Deploy Drones ({dronesToDisplay.length})
+                        Deploy Drones ({activeDrones.length})
                     </p>
                 </Button>
             </div>

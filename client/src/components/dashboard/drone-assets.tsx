@@ -24,12 +24,14 @@ interface DroneAssetsProps {
     onDeployDrones: () => void;
     isDronesDeployed: boolean;
     drones: Drone[];
+    dataMode: "fake" | "real";
 }
 
 export function DroneAssets({
     onDeployDrones,
     isDronesDeployed,
     drones,
+    dataMode,
 }: DroneAssetsProps) {
     const [isVisible, setIsVisible] = useState(true);
 
@@ -49,6 +51,36 @@ export function DroneAssets({
         return <BatteryWarning />;
     };
 
+    const dronesToDisplay =
+        dataMode === "fake" && drones.length === 0
+            ? [
+                  {
+                      name: "Drone X123",
+                      isConnected: true,
+                      batteryLevel: 85,
+                      startingCoordinate: "40.7128° N, 74.0060° W",
+                  },
+                  {
+                      name: "Drone Y456",
+                      isConnected: true,
+                      batteryLevel: 72,
+                      startingCoordinate: "34.0522° N, 118.2437° W",
+                  },
+                  {
+                      name: "Drone Z789",
+                      isConnected: true,
+                      batteryLevel: 93,
+                      startingCoordinate: "51.5074° N, 0.1278° W",
+                  },
+                  {
+                      name: "Drone A012",
+                      isConnected: true,
+                      batteryLevel: 64,
+                      startingCoordinate: "35.6762° N, 139.6503° E",
+                  },
+              ]
+            : drones;
+
     return (
         <div
             className={`z-10 w-[300px] space-y-3 rounded-sm bg-white p-3 transition-all duration-500 ease-in-out ${
@@ -64,7 +96,7 @@ export function DroneAssets({
             <Separator className="my-1" />
 
             <div className="space-y-3">
-                {drones.map((drone, index) => (
+                {dronesToDisplay.map((drone, index) => (
                     <div
                         key={index}
                         className="flex items-center space-x-3 rounded-lg border p-2"
@@ -113,7 +145,7 @@ export function DroneAssets({
                     disabled={isDronesDeployed}
                 >
                     <p className="text-lg font-semibold">
-                        Deploy Drones ({drones.length})
+                        Deploy Drones ({dronesToDisplay.length})
                     </p>
                 </Button>
             </div>

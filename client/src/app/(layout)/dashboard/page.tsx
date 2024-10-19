@@ -9,6 +9,7 @@ import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
     AlertTriangle,
     BatteryFull,
@@ -80,7 +81,7 @@ export default function Page() {
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
     const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
-    const [dataMode, setDataMode] = useState<DataMode>("real");
+    const [dataMode, setDataMode] = useState<DataMode>("fake");
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -476,6 +477,7 @@ export default function Page() {
                         onDeployDrones={handleDeployDrones}
                         isDronesDeployed={isDronesDeployed}
                         drones={drones}
+                        dataMode={dataMode}
                     />
                 </div>
 
@@ -558,6 +560,66 @@ export default function Page() {
                             </div>
                             <Button className="w-full bg-blue-500 text-white hover:bg-blue-600">
                                 Handoff to operator
+                            </Button>
+                        </div>
+                    )}
+
+                    {!selectedHazard && drones.length > 0 && (
+                        <div className="h-full p-4">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-xl font-bold">
+                                    <Plane
+                                        className="mr-2 inline"
+                                        size={24}
+                                    />
+                                    Drone Details
+                                </h2>
+                                <Badge
+                                    className={`${drones[0].isConnected ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                                >
+                                    {drones[0].isConnected
+                                        ? "Connected"
+                                        : "Disconnected"}
+                                </Badge>
+                            </div>
+                            <div className="mb-4 overflow-hidden rounded-lg bg-gray-100">
+                                <div className="h-44 w-full bg-neutral-400" />
+                            </div>
+                            <div className="mb-4 space-y-2 text-sm">
+                                <p>
+                                    <span className="font-semibold">
+                                        Name:{" "}
+                                    </span>
+                                    {drones[0].name}
+                                </p>
+                                <p>
+                                    <span className="font-semibold">
+                                        Starting Coordinate:{" "}
+                                    </span>
+                                    {drones[0].startingCoordinate}
+                                </p>
+                                <p>
+                                    <span className="font-semibold">
+                                        Current Location:{" "}
+                                    </span>
+                                    {drones[0].location.lat.toFixed(4)}° N,{" "}
+                                    {drones[0].location.lng.toFixed(4)}° W
+                                </p>
+                            </div>
+                            <div className="mb-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="font-semibold">
+                                        Battery Level
+                                    </h3>
+                                    <span>{drones[0].batteryLevel}%</span>
+                                </div>
+                                <Progress
+                                    value={drones[0].batteryLevel}
+                                    className="mt-2"
+                                />
+                            </div>
+                            <Button className="w-full bg-blue-500 text-white hover:bg-blue-600">
+                                Request manual control
                             </Button>
                         </div>
                     )}

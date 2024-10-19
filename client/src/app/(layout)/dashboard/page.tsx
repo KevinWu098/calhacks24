@@ -299,6 +299,10 @@ export default function Page() {
                     console.log("Unable to retrieve your location");
                 }
             );
+
+            if (dataMode === "fake") {
+                setDrones(generateFakeDrones(currentLocation!));
+            }
         }
     }, []);
 
@@ -370,9 +374,10 @@ export default function Page() {
             mapRef.setZoom(15);
         }
 
-        if (dataMode === "fake") {
+        if (dataMode != "fake") {
+            // NVM: Handled above in useEffect
             // For fake mode, immediately set the drones
-            setDrones(generateFakeDrones(currentLocation!));
+            // setDrones(generateFakeDrones(currentLocation!));
         } else {
             // For real mode, simulate drone deployment (keep existing logic)
             setTimeout(() => {
@@ -501,12 +506,12 @@ export default function Page() {
 
                 {/* Right Sidebar */}
                 <div
-                    className={`pointer-events-auto absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                    className={`pointer-events-auto absolute bottom-0 right-0 top-12 flex w-80 flex-col bg-white shadow-lg transition-all duration-300 ease-in-out ${
                         isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                     }`}
                 >
                     {selectedHazard && (
-                        <div className="h-full p-4">
+                        <div className="flex h-full flex-col p-4">
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-xl font-bold">
                                     {selectedHazard.type === "warning" ? (
@@ -552,7 +557,7 @@ export default function Page() {
                                     {selectedHazard.createdBy}
                                 </p>
                             </div>
-                            <div className="mb-4">
+                            <div className="mb-4 flex-grow">
                                 <h3 className="mb-2 font-semibold">Details</h3>
                                 <p className="text-sm">
                                     {selectedHazard.details}
@@ -565,7 +570,7 @@ export default function Page() {
                     )}
 
                     {!selectedHazard && drones.length > 0 && (
-                        <div className="h-full p-4">
+                        <div className="flex h-full flex-col p-4">
                             <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-xl font-bold">
                                     <Plane
@@ -606,7 +611,7 @@ export default function Page() {
                                     {drones[0].location.lng.toFixed(4)}° W
                                 </p>
                             </div>
-                            <div className="mb-4">
+                            <div className="mb-4 flex-grow">
                                 <div className="flex items-center justify-between">
                                     <h3 className="font-semibold">
                                         Battery Level

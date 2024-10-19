@@ -7,8 +7,6 @@ import {
     useLoadScript,
 } from "@react-google-maps/api";
 
-import PersonIcon from "../../../../public/person-standing.svg";
-
 interface MapProps {
     center: { lat: number; lng: number };
     zoom: number;
@@ -91,7 +89,7 @@ export function Map({
                 mapContainerClassName="w-full h-full"
                 center={center}
                 zoom={zoom}
-                mapTypeId="satellite"
+                mapTypeId="roadmap"
                 onLoad={handleMapLoad}
                 options={{
                     disableDefaultUI: true,
@@ -99,6 +97,14 @@ export function Map({
                     streetViewControl: false,
                     mapTypeControl: false,
                     fullscreenControl: false,
+                    clickableIcons: false,
+                    mapId: null,
+                    styles: [
+                        {
+                            elementType: "labels",
+                            stylers: [{ visibility: "off" }],
+                        },
+                    ],
                     // animation: google.maps.Animation.SMOOTH,
                 }}
             >

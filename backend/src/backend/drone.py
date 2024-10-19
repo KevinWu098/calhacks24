@@ -1,6 +1,6 @@
 from djitellopy import Tello
 
-tello = Tello(wifi_adapter="Wi-Fi")
+tello = Tello()
 
 tello.connect()
 tello.takeoff()

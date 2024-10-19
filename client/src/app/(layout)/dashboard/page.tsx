@@ -7,6 +7,8 @@ import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
     AlertTriangle,
     BatteryFull,
@@ -47,6 +49,10 @@ interface WebSocketData {
 export interface Hazard {
     type: "warning" | "fire";
     location: { lat: number; lng: number };
+    severity: "Low" | "Moderate" | "High" | "Critical";
+    details: string;
+    createdBy: string;
+    createdAt: Date;
 }
 
 export default function Page() {
@@ -70,8 +76,22 @@ export default function Page() {
         // Add more drones as needed
     ]);
     const [hazards, setHazards] = useState<Hazard[]>([
-        { type: "warning", location: { lat: 0, lng: 0 } },
-        { type: "fire", location: { lat: 0, lng: 0 } },
+        {
+            type: "warning",
+            location: { lat: 0, lng: 0 },
+            severity: "Low",
+            details: "",
+            createdBy: "",
+            createdAt: new Date(),
+        },
+        {
+            type: "fire",
+            location: { lat: 0, lng: 0 },
+            severity: "Low",
+            details: "",
+            createdBy: "",
+            createdAt: new Date(),
+        },
     ]);
     const [selectedHazard, setSelectedHazard] = useState<Hazard | null>(null);
     const [_focusedItem, setFocusedItem] = useState<
@@ -179,8 +199,22 @@ export default function Page() {
             };
 
             setHazards([
-                { type: "warning", location: warningLocation },
-                { type: "fire", location: fireLocation },
+                {
+                    type: "warning",
+                    location: warningLocation,
+                    severity: "Low",
+                    details: "",
+                    createdBy: "",
+                    createdAt: new Date(),
+                },
+                {
+                    type: "fire",
+                    location: fireLocation,
+                    severity: "Low",
+                    details: "",
+                    createdBy: "",
+                    createdAt: new Date(),
+                },
             ]);
 
             // Set person with random offset
@@ -284,6 +318,10 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    severity: "Low",
+                    details: "",
+                    createdBy: "",
+                    createdAt: new Date(),
                 },
                 {
                     type: "fire",
@@ -291,13 +329,32 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    severity: "Low",
+                    details: "",
+                    createdBy: "",
+                    createdAt: new Date(),
                 },
             ]);
         }, 5000);
     }, [center, currentLocation, mapRef]);
 
+    const getSeverityColor = (severity: Hazard["severity"]) => {
+        switch (severity) {
+            case "Low":
+                return "bg-blue-100 text-blue-800";
+            case "Moderate":
+                return "bg-yellow-100 text-yellow-800";
+            case "High":
+                return "bg-orange-100 text-orange-800";
+            case "Critical":
+                return "bg-red-100 text-red-800";
+            default:
+                return "bg-gray-100 text-gray-800";
+        }
+    };
+
     return (
-        <div className="relative h-screen w-screen overflow-hidden bg-gray-100 text-gray-800">
+        <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
             {/* Map container */}
             <div className="absolute inset-0 z-0">
                 <Map
@@ -352,18 +409,18 @@ export default function Page() {
                         isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                     }`}
                 >
-                    <div className="h-full p-4">
-                        <h2 className="mb-4 flex items-center text-xl font-bold">
-                            {selectedHazard ? (
-                                <>
+                    {selectedHazard && (
+                        <div className="h-full p-4">
+                            <div className="mb-4 flex items-center justify-between">
+                                <h2 className="text-xl font-bold">
                                     {selectedHazard.type === "warning" ? (
                                         <AlertTriangle
-                                            className="mr-2"
+                                            className="mr-2 inline"
                                             size={24}
                                         />
                                     ) : (
                                         <Flame
-                                            className="mr-2"
+                                            className="mr-2 inline"
                                             size={24}
                                         />
                                     )}
@@ -371,37 +428,45 @@ export default function Page() {
                                         ? "Warning"
                                         : "Fire"}{" "}
                                     Hazard
-                                </>
-                            ) : (
-                                <>
-                                    <MapPin
-                                        className="mr-2"
-                                        size={24}
-                                    />
-                                    Drone Feed
-                                </>
-                            )}
-                        </h2>
-                        <div className="overflow-hidden rounded-lg bg-gray-100">
-                            {selectedHazard ? (
-                                // <NextImage
-                                //     src="https://example.com/placeholder-gaussian-splat-image.jpg"
-                                //     alt="Gaussian Splat"
-                                //     className="h-auto w-full"
-                                //     width={200}
-                                //     height={200}
-                                // />
+                                </h2>
+                                <Badge
+                                    className={getSeverityColor(
+                                        selectedHazard.severity
+                                    )}
+                                >
+                                    {selectedHazard.severity}
+                                </Badge>
+                            </div>
+                            <div className="mb-4 overflow-hidden rounded-lg bg-gray-100">
                                 <div className="h-44 w-full bg-neutral-400" />
-                            ) : (
-                                <canvas
-                                    ref={canvasRef}
-                                    width="320"
-                                    height="240"
-                                    className="w-full"
-                                />
-                            )}
+                            </div>
+                            <div className="mb-4 space-y-2 text-sm">
+                                <p>
+                                    <span className="font-semibold">
+                                        Location:{" "}
+                                    </span>
+                                    {selectedHazard.location.lat.toFixed(4)}° N,{" "}
+                                    {selectedHazard.location.lng.toFixed(4)}° W
+                                </p>
+                                <p>
+                                    <span className="font-semibold">
+                                        Created:{" "}
+                                    </span>
+                                    {formatTimeAgo(selectedHazard.createdAt)} by{" "}
+                                    {selectedHazard.createdBy}
+                                </p>
+                            </div>
+                            <div className="mb-4">
+                                <h3 className="mb-2 font-semibold">Details</h3>
+                                <p className="text-sm">
+                                    {selectedHazard.details}
+                                </p>
+                            </div>
+                            <Button className="w-full bg-blue-500 text-white hover:bg-blue-600">
+                                Handoff to operator
+                            </Button>
                         </div>
-                    </div>
+                    )}
 
                     {/* Toggle button for right panel */}
                     <button
@@ -439,4 +504,21 @@ export default function Page() {
             </div>
         </div>
     );
+}
+
+// Helper function to format the time ago
+function formatTimeAgo(date: Date) {
+    const now = new Date();
+    const diffInMinutes = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60)
+    );
+
+    if (diffInMinutes < 1) return "just now";
+    if (diffInMinutes < 60) return `${diffInMinutes} min ago`;
+
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hr ago`;
+
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} day${diffInDays > 1 ? "s" : ""} ago`;
 }

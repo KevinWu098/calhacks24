@@ -26,24 +26,24 @@ export function Sidebar({ className }: SidebarProps) {
     return (
         <nav
             className={cn(
-                `relative z-50 hidden h-screen border-r-2 px-2 pb-4 pt-3 md:block`,
+                `relative z-[60] hidden h-screen border-r-2 px-2 pb-4 pt-3 md:block`,
                 status && "duration-500",
                 isOpen ? "w-52 min-w-52" : "w-[50px] min-w-[50px]",
                 className
             )}
         >
-            {/* <SidebarToggle
-                isOpen={isOpen}
-                handleToggle={handleToggle}
-            /> */}
-
-            {/* <Separator className="mt-2 h-[1px]" /> */}
-
+            {/* Sidebar content */}
             <div className="flex-center pb-1">
                 <WaypointsIcon className="size-5" />
             </div>
 
             <SidebarNav />
+
+            {/* Add the toggle button */}
+            <SidebarToggle
+                isOpen={isOpen}
+                handleToggle={handleToggle}
+            />
         </nav>
     );
 }

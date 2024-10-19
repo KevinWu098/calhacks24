@@ -61,11 +61,11 @@ export function DroneAssets({
                         className="flex items-center space-x-3 rounded-lg border p-2"
                     >
                         <Image
-                            src="/drone.png"
+                            src="/path/to/drone-image.jpg"
                             alt={drone.name}
                             width={60}
                             height={60}
-                            className="mr-1 rounded-md"
+                            className="rounded-md"
                         />
                         <div className="flex-grow">
                             <h3 className="text-lg font-semibold">
@@ -75,7 +75,7 @@ export function DroneAssets({
                                 {drone.startingCoordinate}
                             </p>
                             <div className="mt-1 flex items-center space-x-2">
-                                <span className="rounded-full bg-green-200 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                                <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
                                     Active
                                 </span>
                                 {drone.isConnected ? (

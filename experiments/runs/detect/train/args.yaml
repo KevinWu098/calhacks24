@@ -1,7 +1,7 @@
 task: detect
 mode: train
 model: yolo11s.pt
-data: /home/user/calhacks24/experiments/data/data.yaml
+data: /home/user/calhacks24/experiments/final_dataset/data.yaml
 epochs: 100
 time: null
 patience: 100
@@ -11,7 +11,7 @@ save: true
 save_period: -1
 cache: false
 device: cuda
-workers: 0
+workers: 128
 project: null
 name: train
 exist_ok: false

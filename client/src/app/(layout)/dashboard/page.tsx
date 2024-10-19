@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
+import { Header } from "@/components/dashboard/header";
 import {
     Circle,
     GoogleMap,
@@ -319,29 +320,7 @@ export default function Page() {
                 )}
             </div>
 
-            {/* Connection status and battery bar */}
-            <div className="absolute left-0 top-0 z-10 flex h-12 w-full items-center justify-between bg-white px-4 shadow-md">
-                <div className="flex items-center space-x-2">
-                    {isConnected ? (
-                        <Wifi
-                            className="text-green-500"
-                            size={24}
-                        />
-                    ) : (
-                        <WifiOff
-                            className="text-red-500"
-                            size={24}
-                        />
-                    )}
-                    <span
-                        className={`font-semibold ${
-                            isConnected ? "text-green-500" : "text-red-500"
-                        }`}
-                    >
-                        {isConnected ? "Connected" : "Disconnected"}
-                    </span>
-                </div>
-            </div>
+            <Header isConnected={isConnected} />
 
             {/* Left Sidebar */}
             <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">

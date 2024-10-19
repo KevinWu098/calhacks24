@@ -5,7 +5,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex h-[100dvh] max-h-[100dvh] min-w-[100dvw] max-w-[100dvw] overflow-hidden">
             <Sidebar />
 
-            <div className="w-full p-2">{children}</div>
+            <div className="w-full">{children}</div>
         </div>
     );
 }

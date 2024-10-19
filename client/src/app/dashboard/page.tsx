@@ -68,13 +68,13 @@ export default function Page() {
         { type: "fire", location: { lat: 0, lng: 0 } },
     ]);
     const [selectedHazard, setSelectedHazard] = useState<Hazard | null>(null);
-    const [focusedItem, setFocusedItem] = useState<
+    const [_focusedItem, setFocusedItem] = useState<
         "drone" | "hazard" | "person" | null
     >(null);
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
 
     const { isLoaded } = useLoadScript({
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string, // type-cast
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string, // type cast
     });
 
     useEffect(() => {
@@ -365,6 +365,8 @@ export default function Page() {
                                     src={`data:image/jpeg;base64,${person.image}`}
                                     alt={`Person ${index + 1}`}
                                     className="aspect-square w-full object-cover"
+                                    width={300}
+                                    height={300}
                                 />
                                 <div className="p-2">
                                     <p className="text-sm text-gray-600">
@@ -461,11 +463,14 @@ export default function Page() {
                     </h2>
                     <div className="overflow-hidden rounded-lg bg-gray-100">
                         {selectedHazard ? (
-                            <NextImage
-                                src="https://example.com/placeholder-gaussian-splat-image.jpg"
-                                alt="Gaussian Splat"
-                                className="h-auto w-full"
-                            />
+                            // <NextImage
+                            //     src="https://example.com/placeholder-gaussian-splat-image.jpg"
+                            //     alt="Gaussian Splat"
+                            //     className="h-auto w-full"
+                            //     width={200}
+                            //     height={200}
+                            // />
+                            <div className="h-44 w-full bg-neutral-400" />
                         ) : (
                             <canvas
                                 ref={canvasRef}

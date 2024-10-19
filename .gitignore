@@ -35,3 +35,6 @@ datasets
 final_dataset
 *.env
 */__pycache__
+**/.env
+
+.env

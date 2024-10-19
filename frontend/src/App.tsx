@@ -237,7 +237,7 @@ function App() {
     return (
         <div className="relative h-screen w-screen overflow-x-hidden bg-gray-100 text-gray-800">
             {/* Main Content (Google Map) */}
-            <div className="absolute inset-0">
+            <div className="absolute inset-0 z-0">
                 {isLoaded ? (
                     <GoogleMap
                         mapContainerClassName="w-full h-full"
@@ -342,7 +342,7 @@ function App() {
             </div>
 
             {/* Left Sidebar */}
-            <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
+            <div className="absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
                 {/* Persons Panel */}
                 <div className="p-4">
                     <h2 className="mb-4 flex items-center text-xl font-bold">

@@ -87,7 +87,7 @@ export default function Page() {
         {
             type: "fire",
             location: { lat: 0, lng: 0 },
-            severity: "Low",
+            severity: "Critical",
             details: "",
             createdBy: "",
             createdAt: new Date(),
@@ -210,7 +210,7 @@ export default function Page() {
                 {
                     type: "fire",
                     location: fireLocation,
-                    severity: "Low",
+                    severity: "Critical",
                     details: "",
                     createdBy: "",
                     createdAt: new Date(),
@@ -329,7 +329,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
-                    severity: "Low",
+                    severity: "Critical",
                     details: "",
                     createdBy: "",
                     createdAt: new Date(),

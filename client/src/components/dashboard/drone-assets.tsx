@@ -61,7 +61,7 @@ export function DroneAssets({
                         className="flex items-center space-x-3 rounded-lg border p-2"
                     >
                         <Image
-                            src="/path/to/drone-image.jpg"
+                            src="/drone.png"
                             alt={drone.name}
                             width={60}
                             height={60}

@@ -119,8 +119,12 @@ function App() {
     }
   }, [droneFeed, isRightPanelOpen]);
 
+  const handleDroneClick = () => {
+    setIsRightPanelOpen(true);
+  };
+
   return (
-    <div className="relative h-screen w-screen text-black">
+    <div className="relative h-screen w-screen text-black overflow-x-hidden">
       {/* Main Content (Google Map) */}
       <div className="absolute inset-0">
         {isLoaded ? (
@@ -145,7 +149,7 @@ function App() {
                 />
                 <Marker
                   position={currentLocation}
-                  onClick={() => setIsRightPanelOpen(true)}
+                  onClick={handleDroneClick}
                   icon={{
                     fillColor: "#4285F4",
                     strokeColor: "red",
@@ -200,7 +204,8 @@ function App() {
           {drones.map((drone, index) => (
             <div
               key={index}
-              className="flex items-center justify-between mb-2 bg-gray-100 p-2 rounded"
+              className="flex items-center justify-between mb-2 bg-gray-100 p-2 rounded cursor-pointer hover:bg-gray-200"
+              onClick={handleDroneClick}
             >
               <div className="flex items-center">
                 <svg
@@ -237,7 +242,7 @@ function App() {
 
         {/* Toggle button for right panel */}
         <button
-          className={`absolute top-1/2 -translate-y-1/2 -left-8 z-10 bg-white p-2 rounded-l-full shadow-md transition-transform duration-300 ${
+          className={`absolute top-1/2 -translate-y-1/2 -left-8 z-10 bg-white p-2 rounded-l-md shadow-md transition-transform duration-300 ${
             isRightPanelOpen ? "rotate-180" : ""
           }`}
           onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}

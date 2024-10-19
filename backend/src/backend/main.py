@@ -2,12 +2,13 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import torch
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import asyncio
 import json
 from djitellopy import Tello
 import base64
+import time
 
 app = FastAPI()
 
@@ -24,9 +25,20 @@ torch.cuda.set_device(0)  # Set to your desired GPU number
 
 model = YOLO('yolo11x.pt')
 
-tello = Tello()
-tello.connect()
-tello.streamon()
+tello = None
+
+def connect_to_drone():
+    global tello
+    tello = Tello()
+    tello.connect()
+    tello.streamon()
+
+def disconnect_from_drone():
+    global tello
+    if tello:
+        tello.streamoff()
+        tello.end()
+        tello = None
 
 def detect_objects(frame):
     results = model(frame)
@@ -49,7 +61,9 @@ def detect_objects(frame):
     return frame, persons
 
 async def process_video_stream(websocket: WebSocket):
+    global tello
     frame_read = tello.get_frame_read()
+    last_battery_update = 0
     
     try:
         while True:
@@ -63,24 +77,29 @@ async def process_video_stream(websocket: WebSocket):
             _, buffer = cv2.imencode('.jpg', processed_frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
             
-            # Get drone connection status
+            # Get drone connection status and battery level
             drone_connected = tello.stream_on
+            battery_level = tello.get_battery()
 
             await websocket.send_json({
                 "persons": persons,
                 "frame": jpg_as_text,
                 "droneStatus": {
                     "name": "Drone 1",
-                    "isConnected": drone_connected
+                    "isConnected": drone_connected,
+                    "batteryLevel": battery_level
                 }
             })
             await asyncio.sleep(0.1)  # Adjust this value to control the update frequency
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
     finally:
-        tello.streamoff()
+        disconnect_from_drone()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
+    connect_to_drone()
     await process_video_stream(websocket)
 
 if __name__ == "__main__":

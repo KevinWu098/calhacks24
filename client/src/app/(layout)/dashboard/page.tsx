@@ -3,12 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import { Header } from "@/components/dashboard/header";
-import {
-    Circle,
-    GoogleMap,
-    Marker,
-    useLoadScript,
-} from "@react-google-maps/api";
+import { Map } from "@/components/dashboard/map/map";
 import {
     AlertTriangle,
     BatteryFull,
@@ -22,11 +17,9 @@ import {
     MapPin,
     Plane,
     User,
-    Wifi,
-    WifiOff,
 } from "lucide-react";
 
-interface Person {
+export interface Person {
     confidence: number;
     bbox: [number, number, number, number];
     image: string;
@@ -45,7 +38,7 @@ interface WebSocketData {
     droneStatus: Drone;
 }
 
-interface Hazard {
+export interface Hazard {
     type: "warning" | "fire";
     location: { lat: number; lng: number };
 }
@@ -73,10 +66,6 @@ export default function Page() {
         "drone" | "hazard" | "person" | null
     >(null);
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
-
-    const { isLoaded } = useLoadScript({
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string, // type cast
-    });
 
     useEffect(() => {
         const socket = new WebSocket("ws://localhost:8000/ws");
@@ -239,86 +228,16 @@ export default function Page() {
 
     return (
         <div className="relative h-screen w-screen overflow-x-hidden bg-gray-100 text-gray-800">
-            {/* Main Content (Google Map) */}
-            <div className="absolute inset-0">
-                {isLoaded ? (
-                    <GoogleMap
-                        mapContainerClassName="w-full h-full"
-                        center={center}
-                        zoom={14}
-                        mapTypeId="satellite"
-                        onLoad={onMapLoad}
-                    >
-                        {currentLocation && (
-                            <>
-                                <Circle
-                                    center={currentLocation}
-                                    radius={50}
-                                    options={{
-                                        fillColor: "#10B981",
-                                        fillOpacity: 0.3,
-                                        strokeColor: "#10B981",
-                                        strokeOpacity: 0.8,
-                                        strokeWeight: 2,
-                                    }}
-                                />
-                                <Marker
-                                    position={currentLocation}
-                                    onClick={handleDroneClick}
-                                    icon={{
-                                        path: google.maps.SymbolPath.CIRCLE,
-                                        fillColor: "lime",
-                                        fillOpacity: 1,
-                                        strokeColor: "white",
-                                        strokeWeight: 2,
-                                        scale: 8,
-                                    }}
-                                />
-                            </>
-                        )}
-                        {hazards.map((hazard, index) => (
-                            <Marker
-                                key={index + 99}
-                                position={hazard.location}
-                                onClick={() => handleHazardClick(hazard)}
-                                icon={{
-                                    path: google.maps.SymbolPath.CIRCLE,
-                                    fillColor:
-                                        hazard.type === "warning"
-                                            ? "yellow"
-                                            : "red",
-                                    fillOpacity: 1,
-                                    strokeColor: "white",
-                                    strokeWeight: 2,
-                                    scale: 8,
-                                }}
-                            />
-                        ))}
-                        {persons.map((person, index) => (
-                            <Marker
-                                key={index}
-                                position={{
-                                    lat: person.bbox[0],
-                                    lng: person.bbox[1],
-                                }}
-                                onClick={() => handlePersonClick(person)}
-                                icon={{
-                                    path: google.maps.SymbolPath.CIRCLE,
-                                    fillColor: "blue",
-                                    fillOpacity: 1,
-                                    strokeColor: "white",
-                                    strokeWeight: 2,
-                                    scale: 8,
-                                }}
-                            />
-                        ))}
-                    </GoogleMap>
-                ) : (
-                    <div className="flex h-full items-center justify-center">
-                        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
-                    </div>
-                )}
-            </div>
+            <Map
+                center={center}
+                currentLocation={currentLocation}
+                persons={persons}
+                hazards={hazards}
+                handlePersonClick={handlePersonClick}
+                handleHazardClick={handleHazardClick}
+                handleDroneClick={handleDroneClick}
+                onMapLoad={onMapLoad}
+            />
 
             <Header isConnected={isConnected} />
 

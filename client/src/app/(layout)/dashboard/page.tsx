@@ -9,6 +9,7 @@ import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
 import { Nav } from "@/components/dashboard/nav";
+import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -589,6 +590,8 @@ export default function Page() {
                         handleDroneClick={handleDroneClick}
                     />
                 </div>
+
+                <RescueWorkflow />
 
                 {/* Right Sidebar */}
                 <div

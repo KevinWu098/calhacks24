@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Header } from "@/components/dashboard/header";
@@ -67,6 +67,8 @@ export default function Page() {
         "drone" | "hazard" | "person" | null
     >(null);
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
+    const [isDronesDeployed, setIsDronesDeployed] = useState(false);
+    const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
 
     useEffect(() => {
         const socket = new WebSocket("ws://localhost:8000/ws");
@@ -227,15 +229,71 @@ export default function Page() {
         return <BatteryWarning />;
     };
 
+    const handleDeployDrones = useCallback(() => {
+        setIsDronesDeployed(true);
+
+        // Smoothly zoom in on the drone location
+        if (mapRef && currentLocation) {
+            mapRef.panTo(currentLocation);
+            mapRef.setZoom(15);
+        }
+
+        // Simulate drone deployment
+        setTimeout(() => {
+            setDrones((prevDrones) =>
+                prevDrones.map((drone) => ({ ...drone, isConnected: true }))
+            );
+        }, 1000);
+
+        // Simulate person detection
+        setTimeout(() => {
+            setPersons([
+                {
+                    confidence: 0.95,
+                    bbox: [
+                        center.lat + (Math.random() - 0.5) * 0.005,
+                        center.lng + (Math.random() - 0.5) * 0.005,
+                        0,
+                        0,
+                    ],
+                    image: "",
+                    timestamp: new Date().toLocaleTimeString(),
+                },
+            ]);
+        }, 3000);
+
+        // Simulate hazard detection
+        setTimeout(() => {
+            setHazards([
+                {
+                    type: "warning",
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+                {
+                    type: "fire",
+                    location: {
+                        lat: center.lat + (Math.random() - 0.5) * 0.01,
+                        lng: center.lng + (Math.random() - 0.5) * 0.01,
+                    },
+                },
+            ]);
+        }, 5000);
+    }, [center, currentLocation, mapRef]);
+
     return (
         <div className="relative h-screen w-screen overflow-hidden bg-gray-100 text-gray-800">
             {/* Map container */}
             <div className="absolute inset-0 z-0">
                 <Map
                     center={center}
-                    currentLocation={currentLocation}
-                    persons={persons}
-                    hazards={hazards}
+                    zoom={mapZoom}
+                    setZoom={setMapZoom} // Add this line to pass setZoom function to Map component
+                    currentLocation={isDronesDeployed ? currentLocation : null}
+                    persons={isDronesDeployed ? persons : []}
+                    hazards={isDronesDeployed ? hazards : []}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}
@@ -248,7 +306,10 @@ export default function Page() {
                 <Header isConnected={isConnected} />
 
                 <div className="absolute left-4 top-16 z-20">
-                    <DroneAssets />
+                    <DroneAssets
+                        onDeployDrones={handleDeployDrones}
+                        isDronesDeployed={isDronesDeployed}
+                    />
                 </div>
 
                 {/* Right Sidebar */}

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Hazard, Person } from "@/app/(layout)/dashboard/page";
 import {
     Circle,
@@ -8,6 +9,8 @@ import {
 
 interface MapProps {
     center: { lat: number; lng: number };
+    zoom: number;
+    setZoom: (zoom: number) => void;
     currentLocation: { lat: number; lng: number } | null;
     persons: Person[];
     hazards: Hazard[];
@@ -19,6 +22,8 @@ interface MapProps {
 
 export function Map({
     center,
+    zoom,
+    setZoom,
     currentLocation,
     persons,
     hazards,
@@ -30,6 +35,20 @@ export function Map({
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string, // type cast
     });
+
+    const mapRef = useRef<google.maps.Map | null>(null);
+
+    useEffect(() => {
+        if (isLoaded && currentLocation && mapRef.current) {
+            mapRef.current.panTo(currentLocation);
+            mapRef.current.setZoom(15);
+        }
+    }, [isLoaded, currentLocation]);
+
+    const handleMapLoad = (map: google.maps.Map) => {
+        mapRef.current = map;
+        onMapLoad(map);
+    };
 
     if (!isLoaded) {
         return (
@@ -44,9 +63,17 @@ export function Map({
             <GoogleMap
                 mapContainerClassName="w-full h-full"
                 center={center}
-                zoom={14}
+                zoom={zoom}
                 mapTypeId="satellite"
-                onLoad={onMapLoad}
+                onLoad={handleMapLoad}
+                options={{
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                    fullscreenControl: false,
+                    animation: google.maps.Animation.SMOOTH,
+                }}
             >
                 {currentLocation && (
                     <>

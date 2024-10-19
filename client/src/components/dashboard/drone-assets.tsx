@@ -44,7 +44,7 @@ export function DroneAssets({
         }
     }, [isDronesDeployed]);
 
-    if (!isVisible) return null;
+    // if (!isVisible) return null;
 
     const getBatteryIcon = (level: number) => {
         if (level > 90) return <BatteryFull />;
@@ -100,11 +100,13 @@ export function DroneAssets({
 
     return (
         <div
-            className={`z-10 w-[300px] space-y-3 rounded-sm bg-white p-3 transition-all duration-500 ease-in-out ${
-                isDronesDeployed
+            className={cn(
+                "z-10 w-[300px] space-y-3 rounded-sm bg-white p-3 transition-all duration-500 ease-in-out",
+                false && isDronesDeployed
                     ? "-translate-x-full opacity-0"
-                    : "translate-x-0 opacity-100"
-            }`}
+                    : "translate-x-0 opacity-100",
+                "translate-x-0 opacity-100"
+            )}
         >
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Drone Assets</p>

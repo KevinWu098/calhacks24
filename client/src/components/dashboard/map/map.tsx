@@ -108,7 +108,7 @@ export function Map({
                     // animation: google.maps.Animation.SMOOTH,
                 }}
             >
-                {currentLocation && (
+                {/* {currentLocation && (
                     <>
                         <Circle
                             center={currentLocation}
@@ -134,9 +134,9 @@ export function Map({
                             }}
                         />
                     </>
-                )}
+                )} */}
 
-                {hazards.map((hazard, index) => (
+                {/* {hazards.map((hazard, index) => (
                     <Marker
                         key={index + 99}
                         position={hazard.location}
@@ -151,7 +151,7 @@ export function Map({
                             scale: 8,
                         }}
                     />
-                ))}
+                ))} */}
 
                 {persons.map((person) => (
                     <Marker
@@ -162,12 +162,8 @@ export function Map({
                         }}
                         onClick={() => handlePersonClick(person)}
                         icon={{
-                            path: "M12 5m-1 0a1 1 0 1 1 2 0a1 1 0 1 1 -2 0M9 20l3-6 3 6M6 8l6 2 6-2M12 10v4", // SVG path string
-                            fillColor: selectedPersons.some(
-                                (p) => p.id === person.id
-                            )
-                                ? "blue"
-                                : "lightblue",
+                            path: `M25 9.04761C25.8462 9.04761 26.6577 9.38375 27.256 9.98208C27.8543 10.5804 28.1905 11.3919 28.1905 12.2381C28.1905 13.0843 27.8543 13.8958 27.256 14.4941C26.6577 15.0924 25.8462 15.4286 25 15.4286C24.1538 15.4286 23.3423 15.0924 22.744 14.4941C22.1457 13.8958 21.8095 13.0843 21.8095 12.2381C21.8095 11.3919 22.1457 10.5804 22.744 9.98208C23.3423 9.38375 24.1538 9.04761 25 9.04761ZM22.6071 17.0238H27.3929C28.239 17.0238 29.0505 17.3599 29.6489 17.9583C30.2472 18.5566 30.5833 19.3681 30.5833 20.2143V28.9881H28.1905V40.9524H21.8095V28.9881H19.4167V20.2143C19.4167 19.3681 19.7528 18.5566 20.3511 17.9583C20.9495 17.3599 21.761 17.0238 22.6071 17.0238Z`,
+                            fillColor: "#FFCDA1",
                             fillOpacity: 1,
                             strokeColor: "black",
                             strokeWeight: 2,
@@ -175,7 +171,7 @@ export function Map({
                     />
                 ))}
 
-                {drones.map((drone, index) => (
+                {/* {drones.map((drone, index) => (
                     <Marker
                         key={`drone-${index}`}
                         position={drone.location}
@@ -189,7 +185,7 @@ export function Map({
                             scale: 8,
                         }}
                     />
-                ))}
+                ))} */}
             </GoogleMap>
         </div>
     );

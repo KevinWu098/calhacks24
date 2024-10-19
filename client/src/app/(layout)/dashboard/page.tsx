@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import {
     AlertTriangle,
     BatteryFull,
@@ -564,12 +565,17 @@ export default function Page() {
                     />
                 </div>
 
-                <div className="absolute right-4 top-16">
+                <div
+                    className={cn(
+                        "absolute right-4 top-16",
+                        isDronesDeployed && "translate-x-[120%] transition-all"
+                    )}
+                >
                     <MapOverview />
                 </div>
 
                 {/* Left Sidebar */}
-                <div
+                {/* <div
                     className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
                         isLeftPanelVisible
                             ? "translate-x-0"
@@ -589,9 +595,9 @@ export default function Page() {
                         drones={drones}
                         handleDroneClick={handleDroneClick}
                     />
-                </div>
+                </div> */}
 
-                <RescueWorkflow />
+                {/* <RescueWorkflow /> */}
 
                 {/* Right Sidebar */}
                 <div

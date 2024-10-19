@@ -278,9 +278,9 @@ export default function Page() {
         }
     }, [currentLocation, dataMode, generateFakeDrones]);
 
-    // Add a toggle function for data mode
+    // Modify the toggle function for data mode
     const toggleDataMode = useCallback(() => {
-        setDataMode((prevMode) => (prevMode === "fake" ? "real" : "fake"));
+        setDataMode((prevMode) => (prevMode === "real" ? "fake" : "real"));
     }, []);
 
     useEffect(() => {
@@ -444,16 +444,6 @@ export default function Page() {
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
-            {/* Add the toggle button for data mode */}
-            <button
-                className="absolute right-4 top-20 z-50 rounded-md bg-blue-500 px-4 py-2 text-white shadow-md"
-                onClick={toggleDataMode}
-            >
-                {dataMode === "fake"
-                    ? "Switch to Real Data"
-                    : "Switch to Fake Data"}
-            </button>
-
             {/* Map container */}
             <div className="absolute inset-0 z-0">
                 <Map
@@ -474,7 +464,11 @@ export default function Page() {
             {/* Overlay container for all UI elements */}
             <div className="pointer-events-none relative z-10 h-full w-full">
                 <div className="pointer-events-auto">
-                    <Header isConnected={isConnected} />
+                    <Header
+                        isConnected={isConnected}
+                        dataMode={dataMode}
+                        toggleDataMode={toggleDataMode}
+                    />
                 </div>
 
                 <div className="pointer-events-auto absolute left-4 top-16 z-20">
@@ -582,25 +576,27 @@ export default function Page() {
                 </div>
 
                 {/* Floating Hazard Panel */}
-                <div className="pointer-events-auto absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                    {hazards.map((hazard, index) => (
-                        <button
-                            key={index}
-                            className={`rounded-full p-2 ${
-                                hazard.type === "warning"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
-                            } text-white`}
-                            onClick={() => handleHazardClick(hazard)}
-                        >
-                            {hazard.type === "warning" ? (
-                                <AlertTriangle size={24} />
-                            ) : (
-                                <Flame size={24} />
-                            )}
-                        </button>
-                    ))}
-                </div>
+                {isDronesDeployed && (
+                    <div className="pointer-events-auto absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
+                        {hazards.map((hazard, index) => (
+                            <button
+                                key={index}
+                                className={`rounded-full p-2 ${
+                                    hazard.type === "warning"
+                                        ? "bg-yellow-500"
+                                        : "bg-red-500"
+                                } text-white`}
+                                onClick={() => handleHazardClick(hazard)}
+                            >
+                                {hazard.type === "warning" ? (
+                                    <AlertTriangle size={24} />
+                                ) : (
+                                    <Flame size={24} />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );

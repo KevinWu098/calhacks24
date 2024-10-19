@@ -2,7 +2,16 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Battery, Wifi, WifiOff, X } from "lucide-react";
+import {
+    Battery,
+    BatteryFull,
+    BatteryLow,
+    BatteryMedium,
+    BatteryWarning,
+    Wifi,
+    WifiOff,
+    X,
+} from "lucide-react";
 
 interface Drone {
     name: string;
@@ -34,10 +43,10 @@ export function DroneAssets({
     if (!isVisible) return null;
 
     const getBatteryIcon = (level: number) => {
-        if (level > 75) return <Battery />;
-        if (level > 50) return <Battery className="text-yellow-500" />;
-        if (level > 25) return <Battery className="text-orange-500" />;
-        return <Battery className="text-red-500" />;
+        if (level > 90) return <BatteryFull />;
+        if (level > 70) return <BatteryMedium />;
+        if (level > 30) return <BatteryLow />;
+        return <BatteryWarning />;
     };
 
     return (

@@ -303,7 +303,7 @@ export default function Page() {
                 <Map
                     center={center}
                     zoom={mapZoom}
-                    setZoom={setMapZoom} // Add this line to pass setZoom function to Map component
+                    setZoom={setMapZoom}
                     currentLocation={isDronesDeployed ? currentLocation : null}
                     persons={isDronesDeployed ? persons : []}
                     hazards={isDronesDeployed ? hazards : []}
@@ -315,10 +315,12 @@ export default function Page() {
             </div>
 
             {/* Overlay container for all UI elements */}
-            <div className="relative z-10 h-full w-full">
-                <Header isConnected={isConnected} />
+            <div className="pointer-events-none relative z-10 h-full w-full">
+                <div className="pointer-events-auto">
+                    <Header isConnected={isConnected} />
+                </div>
 
-                <div className="absolute left-4 top-16 z-20">
+                <div className="pointer-events-auto absolute left-4 top-16 z-20">
                     <DroneAssets
                         onDeployDrones={handleDeployDrones}
                         isDronesDeployed={isDronesDeployed}
@@ -328,7 +330,7 @@ export default function Page() {
 
                 {/* Left Sidebar */}
                 <div
-                    className={`absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
+                    className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
                         isLeftPanelVisible
                             ? "translate-x-0"
                             : "-translate-x-full"
@@ -346,7 +348,7 @@ export default function Page() {
 
                 {/* Right Sidebar */}
                 <div
-                    className={`absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                    className={`pointer-events-auto absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
                         isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                     }`}
                 >
@@ -415,7 +417,7 @@ export default function Page() {
                 </div>
 
                 {/* Floating Hazard Panel */}
-                <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
+                <div className="pointer-events-auto absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
                     {hazards.map((hazard, index) => (
                         <button
                             key={index}

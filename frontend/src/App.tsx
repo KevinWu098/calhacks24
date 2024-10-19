@@ -1,25 +1,25 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-    GoogleMap,
-    useJsApiLoader,
-    Marker,
     Circle,
+    GoogleMap,
+    Marker,
+    useJsApiLoader,
 } from "@react-google-maps/api";
 import {
-    Wifi,
-    WifiOff,
-    Plane,
-    Diamond,
-    User,
-    ChevronRight,
-    ChevronLeft,
-    MapPin,
+    AlertTriangle,
     BatteryFull,
     BatteryLow,
     BatteryMedium,
     BatteryWarning,
-    AlertTriangle,
+    ChevronLeft,
+    ChevronRight,
+    Diamond,
     Flame,
+    MapPin,
+    Plane,
+    User,
+    Wifi,
+    WifiOff,
 } from "lucide-react";
 
 interface Person {
@@ -235,7 +235,7 @@ function App() {
     };
 
     return (
-        <div className="relative h-screen w-screen text-gray-800 overflow-x-hidden bg-gray-100">
+        <div className="relative h-screen w-screen overflow-x-hidden bg-gray-100 text-gray-800">
             {/* Main Content (Google Map) */}
             <div className="absolute inset-0">
                 {isLoaded ? (
@@ -311,19 +311,25 @@ function App() {
                         ))}
                     </GoogleMap>
                 ) : (
-                    <div className="flex items-center justify-center h-full">
-                        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+                    <div className="flex h-full items-center justify-center">
+                        <div className="h-32 w-32 animate-spin rounded-full border-b-2 border-t-2 border-blue-500"></div>
                     </div>
                 )}
             </div>
 
             {/* Connection status and battery bar */}
-            <div className="absolute left-0 top-0 h-12 w-full bg-white shadow-md flex items-center justify-between px-4 z-10">
+            <div className="absolute left-0 top-0 z-10 flex h-12 w-full items-center justify-between bg-white px-4 shadow-md">
                 <div className="flex items-center space-x-2">
                     {isConnected ? (
-                        <Wifi className="text-green-500" size={24} />
+                        <Wifi
+                            className="text-green-500"
+                            size={24}
+                        />
                     ) : (
-                        <WifiOff className="text-red-500" size={24} />
+                        <WifiOff
+                            className="text-red-500"
+                            size={24}
+                        />
                     )}
                     <span
                         className={`font-semibold ${
@@ -336,24 +342,27 @@ function App() {
             </div>
 
             {/* Left Sidebar */}
-            <div className="absolute left-0 top-12 bottom-0 w-80 bg-white shadow-lg overflow-auto transition-all duration-300 ease-in-out">
+            <div className="absolute bottom-0 left-0 top-12 w-80 overflow-auto bg-white shadow-lg transition-all duration-300 ease-in-out">
                 {/* Persons Panel */}
                 <div className="p-4">
-                    <h2 className="text-xl font-bold mb-4 flex items-center">
-                        <User className="mr-2" size={24} />
+                    <h2 className="mb-4 flex items-center text-xl font-bold">
+                        <User
+                            className="mr-2"
+                            size={24}
+                        />
                         Detected Persons
                     </h2>
                     <div className="grid grid-cols-2 gap-4">
                         {persons.map((person, index) => (
                             <div
                                 key={index}
-                                className="bg-gray-100 rounded-lg shadow-sm overflow-hidden cursor-pointer"
+                                className="cursor-pointer overflow-hidden rounded-lg bg-gray-100 shadow-sm"
                                 onClick={() => handlePersonClick(person)}
                             >
                                 <img
                                     src={`data:image/jpeg;base64,${person.image}`}
                                     alt={`Person ${index + 1}`}
-                                    className="w-full aspect-square object-cover"
+                                    className="aspect-square w-full object-cover"
                                 />
                                 <div className="p-2">
                                     <p className="text-sm text-gray-600">
@@ -368,15 +377,18 @@ function App() {
                     </div>
                 </div>
                 {/* Drones Panel */}
-                <div className="p-4 border-t">
-                    <h2 className="text-xl font-bold mb-4 flex items-center">
-                        <Plane className="mr-2" size={24} />
+                <div className="border-t p-4">
+                    <h2 className="mb-4 flex items-center text-xl font-bold">
+                        <Plane
+                            className="mr-2"
+                            size={24}
+                        />
                         Drones
                     </h2>
                     {drones.map((drone, index) => (
                         <div
                             key={index}
-                            className="flex items-center justify-between mb-2 bg-gray-100 p-3 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors duration-200"
+                            className="mb-2 flex cursor-pointer items-center justify-between rounded-lg bg-gray-100 p-3 transition-colors duration-200 hover:bg-gray-200"
                             onClick={handleDroneClick}
                         >
                             <div className="flex items-center">
@@ -389,17 +401,17 @@ function App() {
                             </div>
                             <div className="flex items-center">
                                 {drone.isConnected && (
-                                    <div className="relative group">
+                                    <div className="group relative">
                                         {getBatteryIcon(drone.batteryLevel)}
-                                        <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs rounded py-1 px-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 transform rounded bg-gray-800 px-2 py-1 text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                                             {drone.batteryLevel}%
                                         </span>
                                     </div>
                                 )}
                                 <div
-                                    className={`w-3 h-3 rounded-full ${
+                                    className={`h-3 w-3 rounded-full ${
                                         drone.isConnected
-                                            ? "bg-green-500 animate-pulse"
+                                            ? "animate-pulse bg-green-500"
                                             : "bg-red-500"
                                     }`}
                                 ></div>
@@ -411,18 +423,24 @@ function App() {
 
             {/* Right Sidebar */}
             <div
-                className={`absolute right-0 top-12 bottom-0 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                className={`absolute bottom-0 right-0 top-12 w-80 bg-white shadow-lg transition-all duration-300 ease-in-out ${
                     isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                 }`}
             >
-                <div className="p-4 h-full">
-                    <h2 className="text-xl font-bold mb-4 flex items-center">
+                <div className="h-full p-4">
+                    <h2 className="mb-4 flex items-center text-xl font-bold">
                         {selectedHazard ? (
                             <>
                                 {selectedHazard.type === "warning" ? (
-                                    <AlertTriangle className="mr-2" size={24} />
+                                    <AlertTriangle
+                                        className="mr-2"
+                                        size={24}
+                                    />
                                 ) : (
-                                    <Flame className="mr-2" size={24} />
+                                    <Flame
+                                        className="mr-2"
+                                        size={24}
+                                    />
                                 )}
                                 {selectedHazard.type === "warning"
                                     ? "Warning"
@@ -431,17 +449,20 @@ function App() {
                             </>
                         ) : (
                             <>
-                                <MapPin className="mr-2" size={24} />
+                                <MapPin
+                                    className="mr-2"
+                                    size={24}
+                                />
                                 Drone Feed
                             </>
                         )}
                     </h2>
-                    <div className="bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="overflow-hidden rounded-lg bg-gray-100">
                         {selectedHazard ? (
                             <img
                                 src="https://example.com/placeholder-gaussian-splat-image.jpg"
                                 alt="Gaussian Splat"
-                                className="w-full h-auto"
+                                className="h-auto w-full"
                             />
                         ) : (
                             <canvas
@@ -456,7 +477,7 @@ function App() {
 
                 {/* Toggle button for right panel */}
                 <button
-                    className={`absolute top-1/2 -translate-y-1/2 -left-10 z-10 bg-white p-2 rounded-l-md shadow-md transition-all duration-300 hover:bg-gray-100`}
+                    className={`absolute -left-10 top-1/2 z-10 -translate-y-1/2 rounded-l-md bg-white p-2 shadow-md transition-all duration-300 hover:bg-gray-100`}
                     onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
                 >
                     {isRightPanelOpen ? (
@@ -468,11 +489,11 @@ function App() {
             </div>
 
             {/* Floating Hazard Panel */}
-            <div className="absolute left-[340px] bottom-4 bg-white rounded-lg shadow-lg p-2 flex space-x-2">
+            <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
                 {hazards.map((hazard, index) => (
                     <button
                         key={index}
-                        className={`p-2 rounded-full ${
+                        className={`rounded-full p-2 ${
                             hazard.type === "warning"
                                 ? "bg-yellow-500"
                                 : "bg-red-500"

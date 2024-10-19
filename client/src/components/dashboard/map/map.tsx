@@ -7,6 +7,8 @@ import {
     useLoadScript,
 } from "@react-google-maps/api";
 
+import PersonIcon from "../../../../public/person-standing.svg";
+
 interface MapProps {
     center: { lat: number; lng: number };
     zoom: number;
@@ -154,16 +156,15 @@ export function Map({
                         }}
                         onClick={() => handlePersonClick(person)}
                         icon={{
-                            path: google.maps.SymbolPath.CIRCLE,
+                            path: "M12 5m-1 0a1 1 0 1 1 2 0a1 1 0 1 1 -2 0M9 20l3-6 3 6M6 8l6 2 6-2M12 10v4", // SVG path string
                             fillColor: selectedPersons.some(
                                 (p) => p.id === person.id
                             )
                                 ? "blue"
                                 : "lightblue",
                             fillOpacity: 1,
-                            strokeColor: "white",
+                            strokeColor: "black",
                             strokeWeight: 2,
-                            scale: 8,
                         }}
                     />
                 ))}

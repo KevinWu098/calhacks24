@@ -17,6 +17,7 @@
         "@radix-ui/react-separator": "^1.1.0",
         "@radix-ui/react-slot": "^1.1.0",
         "@radix-ui/react-switch": "^1.1.1",
+        "@radix-ui/react-toast": "^1.2.2",
         "@react-google-maps/api": "^2.20.3",
         "@react-three/drei": "^9.114.6",
         "@react-three/fiber": "^8.17.10",
@@ -26,8 +27,10 @@
         "google-maps-react": "^2.0.6",
         "lucide-react": "^0.453.0",
         "next": "14.2.15",
+        "next-themes": "^0.3.0",
         "react": "^18",
         "react-dom": "^18",
+        "sonner": "^1.5.0",
         "tailwind-merge": "^2.5.4",
         "tailwindcss-animate": "^1.0.7",
         "three": "^0.169.0"

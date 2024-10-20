@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { useToast } from "@/hooks/use-toast";
 import { calculateRescueTime, cn } from "@/lib/utils";
 import axios from "axios";
 import {
@@ -27,6 +28,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Flame,
+    Loader2,
     Plane,
 } from "lucide-react";
 
@@ -495,7 +497,7 @@ export default function Page() {
 
         const persons: Person[] = [
             {
-                id: crypto.randomUUID(),
+                id: "person1",
                 confidence: 0.95,
                 bbox: [
                     center.lat + personOffset1.lat,
@@ -507,7 +509,7 @@ export default function Page() {
                 timestamp: new Date().toISOString(),
             },
             {
-                id: crypto.randomUUID(),
+                id: "person2",
                 confidence: 0.88,
                 bbox: [
                     center.lat + personOffset2.lat,
@@ -519,7 +521,7 @@ export default function Page() {
                 timestamp: new Date().toISOString(),
             },
             {
-                id: crypto.randomUUID(),
+                id: "person3",
                 confidence: 0.92,
                 bbox: [
                     center.lat + personOffset3.lat,
@@ -531,7 +533,7 @@ export default function Page() {
                 timestamp: new Date().toISOString(),
             },
             {
-                id: crypto.randomUUID(),
+                id: "person4",
                 confidence: 0.85,
                 bbox: [
                     center.lat + personOffset4.lat,
@@ -621,9 +623,11 @@ export default function Page() {
     const [showDrones, setShowDrones] = useState<boolean>(true);
     const [query, setQuery] = useState("");
     const [destination, setDestination] = useState();
+    const [loading, setLoading] = useState(false);
 
     const handleQuery = (input: string) => {
         if (input.trim() !== "") {
+            setLoading(true);
             socketTwo.send(
                 JSON.stringify({
                     event: "query",
@@ -642,6 +646,8 @@ export default function Page() {
         []
     );
 
+    const { toast } = useToast();
+    const [agentMessage, setAgentMessage] = useState("");
     useEffect(() => {
         socketTwo.onopen = () => {
             console.log("WebSocket connection established");
@@ -663,23 +669,24 @@ export default function Page() {
                 if (messageEvent === "plan_route") {
                     setAvoidedHazards(hazards);
                     setDestination(message.id);
-
-                    console.log("hit", message.id, hazards);
                 }
 
-                // if (data) {
-                //     console.log("Got data");
+                if (messageEvent === "chat_chunk") {
+                    console.log(agentMessage);
+                    setAgentMessage((prev) => (prev += message.content));
+                }
 
-                //     Object.keys(data).forEach((key) => {
-                //         if (resolvedIds?.includes(data[key].id)) {
-                //             data[key].severity = "RESOLVED";
-                //         }
-                //     });
-
-                //     setData(data);
-                // } else {
-                //     console.warn("Received unknown message");
-                // }
+                if (messageEvent === "AGENT_RESPONSE_COMPLETE") {
+                    console.log("herer!");
+                    toast({
+                        title: "Summary",
+                        description: agentMessage,
+                        className: "w-[500px] z-50 mr-16",
+                        duration: 8000,
+                    });
+                    setAgentMessage("");
+                    setLoading(false);
+                }
             };
 
             socketTwo.onclose = () => {
@@ -1170,7 +1177,7 @@ export default function Page() {
                 </div>
             )}
 
-            <div className="absolute bottom-8 left-1/2 -translate-x-[50%]">
+            <div className="absolute bottom-8 left-1/2 flex -translate-x-[50%] items-center space-x-2">
                 <Input
                     className="w-[500px] text-lg"
                     placeholder="Interact with data..."
@@ -1183,6 +1190,9 @@ export default function Page() {
                     }}
                     onChange={handleInputChange}
                 />
+                {loading && (
+                    <Loader2 className="size-8 animate-spin stroke-blue-500" />
+                )}
             </div>
         </div>
     );

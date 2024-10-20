@@ -234,8 +234,8 @@ export default function Page() {
                     {
                         type: "warning",
                         location: {
-                            lat: center.lat + (Math.random() - 0.5) * 0.01,
-                            lng: center.lng + (Math.random() - 0.5) * 0.01,
+                            lat: center.lat - 0.003,
+                            lng: center.lng + 0.0024,
                         },
                         severity: "Low",
                         details: "",
@@ -246,8 +246,8 @@ export default function Page() {
                     {
                         type: "fire",
                         location: {
-                            lat: center.lat + (Math.random() - 0.5) * 0.01,
-                            lng: center.lng + (Math.random() - 0.5) * 0.01,
+                            lat: center.lat + 0.0,
+                            lng: center.lng - 0.0095,
                         },
                         severity: "Critical",
                         details: "",
@@ -261,20 +261,37 @@ export default function Page() {
                 setDrones(generateFakeDrones(currentLocation));
 
                 // Set persons with random offsets
-                const newPersons: Person[] = Array(5)
-                    .fill(null)
-                    .map(() => ({
+                // const newPersons: Person[] = Array(5)
+                //     .fill(null)
+                //     .map(() => ({
+                //         id: crypto.randomUUID(),
+                //         confidence: 0.95,
+                //         bbox: [
+                //             center.lat + (Math.random() - 0.5) * 0.01,
+                //             center.lng + (Math.random() - 0.5) * 0.01,
+                //             0,
+                //             0,
+                //         ],
+                //         image: "",
+                //         timestamp: new Date().toISOString(),
+                //     }));
+
+                const newPersons = [
+                    {
                         id: crypto.randomUUID(),
                         confidence: 0.95,
-                        bbox: [
-                            center.lat + (Math.random() - 0.5) * 0.01,
-                            center.lng + (Math.random() - 0.5) * 0.01,
-                            0,
-                            0,
-                        ],
+                        bbox: [center.lat + 0.002, center.lng - 0.012, 0, 0],
                         image: "",
                         timestamp: new Date().toISOString(),
-                    }));
+                    },
+                    {
+                        id: crypto.randomUUID(),
+                        confidence: 0.95,
+                        bbox: [center.lat - 0.005, center.lng + 0.0026, 0, 0],
+                        image: "",
+                        timestamp: new Date().toISOString(),
+                    },
+                ];
 
                 setPersons(newPersons);
             } else {
@@ -454,62 +471,6 @@ export default function Page() {
         }
     };
 
-    const planRescueRoute = useCallback(() => {
-        if (currentLocation && selectedPersons.length > 0 && mapRef) {
-            const directionsService = new google.maps.DirectionsService();
-            const waypoints = selectedPersons.map((person) => ({
-                location: new google.maps.LatLng(
-                    person.bbox[0],
-                    person.bbox[1]
-                ),
-                stopover: true,
-            }));
-
-            const hazardWaypoints = hazards.map((h) => ({
-                location: new google.maps.LatLng(
-                    h.location.lat,
-                    h.location.lng
-                ),
-                stopover: true,
-            }));
-
-            directionsService.route(
-                {
-                    origin: new google.maps.LatLng(
-                        currentLocation.lat,
-                        currentLocation.lng
-                    ),
-                    destination: new google.maps.LatLng(
-                        currentLocation.lat,
-                        currentLocation.lng
-                    ),
-                    waypoints: [...waypoints],
-                    // optimizeWaypoints: true,
-                    travelMode: google.maps.TravelMode.WALKING,
-                    provideRouteAlternatives: true,
-                },
-                (result, status) => {
-                    // legitRoute = null
-                    // for (const route of result?.routes ?? []) {
-                    //     for (const wp of route.waypoint_order) {
-                    //         if
-                    //     }
-                    // }
-
-                    console.log(result?.routes);
-
-                    if (status === google.maps.DirectionsStatus.OK && result) {
-                        const route = result.routes[0].overview_path;
-
-                        console.log(result.routes[0]);
-
-                        setRescueRoute(route);
-                    }
-                }
-            );
-        }
-    }, [currentLocation, selectedPersons, mapRef]);
-
     const toggleSelectMode = useCallback(() => {
         setSelectMode((prev) => !prev);
         if (selectMode) {
@@ -537,6 +498,90 @@ export default function Page() {
     const handleCloseHumanPanel = () => {
         setShowHumanPanel(false);
     };
+
+    const planHereRoute = useCallback(
+        (map, router) => {
+            if (
+                map.current &&
+                router.current &&
+                currentLocation &&
+                selectedPersons.length > 0
+            ) {
+                console.log(selectedPersons);
+                const start = currentLocation;
+                const end = {
+                    lat: selectedPersons[0]?.bbox[0],
+                    lng: selectedPersons[0]?.bbox[1],
+                };
+
+                const waypoint = selectedPersons.at(1)
+                    ? {
+                          lat: selectedPersons[1]?.bbox[0],
+                          lng: selectedPersons[1]?.bbox[1],
+                      }
+                    : null;
+
+                // Define avoid areas based on hazards
+                const avoidAreas = hazards
+                    .map((hazard) => {
+                        const avoidAreaSize = 0.0005;
+                        return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
+                    })
+                    .join("|");
+
+                const routingParameters = {
+                    routingMode: "fast",
+                    transportMode: "pedestrian",
+                    origin: `${start.lat},${start.lng}`,
+                    destination: `${end.lat},${end.lng}`,
+                    return: "polyline",
+                    ...(waypoint && { via: `${waypoint.lat},${waypoint.lng}` }),
+                    ...(avoidAreas && { "avoid[areas]": avoidAreas }),
+                };
+
+                const onResult = (result) => {
+                    if (result.routes && result.routes.length > 0) {
+                        const currentObjects = map.current?.getObjects();
+                        if (currentObjects) {
+                            currentObjects.forEach((object) => {
+                                if (object instanceof H.map.Polyline) {
+                                    map.current?.removeObject(object);
+                                }
+                            });
+                        }
+
+                        const route = result.routes[0];
+                        route.sections.forEach((section) => {
+                            const linestring =
+                                H.geo.LineString.fromFlexiblePolyline(
+                                    section.polyline
+                                );
+                            const routeLine = new H.map.Polyline(linestring, {
+                                style: { strokeColor: "blue", lineWidth: 4 },
+                                data: {},
+                            });
+                            map.current?.addObject(routeLine);
+                            map.current?.getViewModel().setLookAtData({
+                                bounds: routeLine.getBoundingBox()!,
+                                zoom: 16,
+                            });
+                        });
+                    }
+                };
+
+                const onError = (error: unknown) => {
+                    console.error("Error calculating route:", error);
+                };
+
+                router.current.calculateRoute(
+                    routingParameters,
+                    onResult,
+                    onError
+                );
+            }
+        },
+        [currentLocation, selectedPersons, hazards]
+    );
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
@@ -765,6 +810,7 @@ export default function Page() {
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}
                     onMapLoad={onMapLoad}
+                    planHereRoute={planHereRoute}
                     rescueRoute={rescueRoute}
                     selectMode={selectMode}
                     selectedPersons={selectedPersons}
@@ -801,7 +847,7 @@ export default function Page() {
                         handlePersonClick={handlePersonClick}
                         selectedPersons={selectedPersons}
                         handlePersonSelection={handlePersonSelection}
-                        planRescueRoute={planRescueRoute}
+                        // planRescueRoute={planHereRoute}
                         selectMode={selectMode}
                         toggleSelectMode={toggleSelectMode}
                     />

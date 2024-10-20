@@ -8,7 +8,7 @@ interface DetectedPersonsProps {
     handlePersonClick: (person: Person) => void;
     selectedPersons: Person[];
     handlePersonSelection: (person: Person, multiSelect: boolean) => void;
-    planRescueRoute: () => void;
+    // planRescueRoute: () => void;
     selectMode: boolean;
     toggleSelectMode: () => void;
 }
@@ -18,7 +18,7 @@ export function DetectedPersons({
     handlePersonClick,
     selectedPersons,
     handlePersonSelection,
-    planRescueRoute,
+    // planRescueRoute,
     selectMode,
     toggleSelectMode,
 }: DetectedPersonsProps) {
@@ -72,7 +72,7 @@ export function DetectedPersons({
                     </div>
                 ))}
             </div>
-            {selectedPersons.length > 0 && (
+            {/* {selectedPersons.length > 0 && (
                 <Button
                     className="mt-2 w-full bg-blue-500 text-white hover:bg-blue-600"
                     onClick={planRescueRoute}
@@ -83,7 +83,7 @@ export function DetectedPersons({
                     />
                     Plan rescue route
                 </Button>
-            )}
+            )} */}
         </div>
     );
 }

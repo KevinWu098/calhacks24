@@ -23,11 +23,11 @@ interface MapProps {
     currentLocation: { lat: number; lng: number } | null;
     persons: Person[];
     hazards: Hazard[];
+    planHereRoute: (map, route) => void;
     drones: { name: string; location: { lat: number; lng: number } }[];
     handlePersonClick: (person: Person) => void;
     handleHazardClick: (hazard: Hazard) => void;
     handleDroneClick: (droneName: string) => void;
-    onMapLoad: (map: H.Map) => void;
     rescueRoute: { lat: number; lng: number }[];
     selectMode: boolean;
     selectedPersons: Person[];
@@ -35,17 +35,17 @@ interface MapProps {
 
 export const HereMap = ({
     apikey,
-    center,
-    zoom,
+    center: _center,
+    zoom: _zoom,
     setZoom,
     currentLocation,
     persons,
     hazards,
     drones,
+    planHereRoute,
     handlePersonClick,
     handleHazardClick,
     handleDroneClick,
-    onMapLoad,
     rescueRoute,
     selectMode,
     selectedPersons,
@@ -98,7 +98,7 @@ export const HereMap = ({
                 map.current = null;
             }
         };
-    }, []);
+    }, [apikey, setZoom]);
 
     // Pan to current location when it changes
     useEffect(() => {
@@ -109,67 +109,77 @@ export const HereMap = ({
     }, [currentLocation]);
 
     // Define planHereRoute inside HereMap
-    const planHereRoute = useCallback(() => {
-        if (
-            map.current &&
-            router.current &&
-            currentLocation &&
-            selectedPersons.length > 0
-        ) {
-            const start = currentLocation;
-            const end = {
-                lat: selectedPersons[0]?.bbox[0],
-                lng: selectedPersons[0]?.bbox[1],
-            };
+    // const planHereRoute = useCallback(() => {
+    //     if (
+    //         map.current &&
+    //         router.current &&
+    //         currentLocation &&
+    //         selectedPersons.length > 0
+    //     ) {
+    //         const start = currentLocation;
+    //         const end = {
+    //             lat: selectedPersons[0]?.bbox[0],
+    //             lng: selectedPersons[0]?.bbox[1],
+    //         };
 
-            // Define avoid areas based on hazards
-            const avoidAreas = hazards
-                .map((hazard) => {
-                    const avoidAreaSize = 0.0005;
-                    return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
-                })
-                .join("|");
+    //         // Define avoid areas based on hazards
+    //         const avoidAreas = hazards
+    //             .map((hazard) => {
+    //                 const avoidAreaSize = 0.0005;
+    //                 return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
+    //             })
+    //             .join("|");
 
-            const routingParameters = {
-                routingMode: "fast",
-                transportMode: "pedestrian",
-                origin: `${start.lat},${start.lng}`,
-                destination: `${end.lat},${end.lng}`,
-                return: "polyline",
-                ...(avoidAreas && { "avoid[areas]": avoidAreas }),
-            };
+    //         const routingParameters = {
+    //             routingMode: "fast",
+    //             transportMode: "pedestrian",
+    //             origin: `${start.lat},${start.lng}`,
+    //             destination: `${end.lat},${end.lng}`,
+    //             return: "polyline",
+    //             // ...(avoidAreas && { "avoid[areas]": avoidAreas }),
+    //         };
 
-            const onResult = (result) => {
-                if (result.routes && result.routes.length > 0) {
-                    const route = result.routes[0];
-                    route.sections.forEach((section) => {
-                        const linestring =
-                            H.geo.LineString.fromFlexiblePolyline(
-                                section.polyline
-                            );
-                        const routeLine = new H.map.Polyline(linestring, {
-                            style: { strokeColor: "blue", lineWidth: 4 },
-                            data: {},
-                        });
-                        map.current.addObject(routeLine);
-                        map.current.getViewModel().setLookAtData({
-                            bounds: routeLine.getBoundingBox(),
-                        });
-                    });
-                }
-            };
+    //         const onResult = (result) => {
+    //             if (result.routes && result.routes.length > 0) {
+    //                 const currentObjects = map.current?.getObjects();
+    //                 if (currentObjects) {
+    //                     currentObjects.forEach((object) => {
+    //                         if (object instanceof H.map.Polyline) {
+    //                             map.current?.removeObject(object);
+    //                         }
+    //                     });
+    //                 }
 
-            const onError = (error) => {
-                console.error("Error calculating route:", error);
-            };
+    //                 const route = result.routes[0];
+    //                 route.sections.forEach((section) => {
+    //                     const linestring =
+    //                         H.geo.LineString.fromFlexiblePolyline(
+    //                             section.polyline
+    //                         );
+    //                     const routeLine = new H.map.Polyline(linestring, {
+    //                         style: { strokeColor: "blue", lineWidth: 4 },
+    //                         data: {},
+    //                     });
+    //                     map.current?.addObject(routeLine);
+    //                     map.current?.getViewModel().setLookAtData({
+    //                         bounds: routeLine.getBoundingBox()!,
+    //                         zoom: 16,
+    //                     });
+    //                 });
+    //             }
+    //         };
 
-            router.current.calculateRoute(routingParameters, onResult, onError);
-        }
-    }, [currentLocation, selectedPersons, hazards]);
+    //         const onError = (error: unknown) => {
+    //             console.error("Error calculating route:", error);
+    //         };
+
+    //         router.current.calculateRoute(routingParameters, onResult, onError);
+    //     }
+    // }, [currentLocation, selectedPersons, hazards]);
 
     useEffect(() => {
         if (map.current) {
-            planHereRoute();
+            planHereRoute(map, router);
         }
     }, [planHereRoute]);
 
@@ -252,7 +262,15 @@ export const HereMap = ({
                 map.current!.addObject(droneMarker);
             });
         }
-    }, [currentLocation, persons, hazards, drones]);
+    }, [
+        currentLocation,
+        persons,
+        hazards,
+        drones,
+        handleDroneClick,
+        handlePersonClick,
+        handleHazardClick,
+    ]);
 
     return (
         <div

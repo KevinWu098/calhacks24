@@ -1,14 +1,18 @@
 import Image from "next/image";
+import Link from "next/link";
+import { SplatViewer } from "@/components/splat/splat-viewer";
+import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { X } from "lucide-react";
 
 interface DetailsProps {
+    detailId: string;
     handleClose: VoidFunction;
 }
 
-export function Details({ handleClose }: DetailsProps) {
+export function Details({ detailId, handleClose }: DetailsProps) {
     return (
-        <div className="max-w-[500px] space-y-4 rounded-sm border-2 border-gray-400 bg-white p-3">
+        <div className="max-w-[500px] space-y-2 rounded-sm border-2 border-gray-400 bg-white p-3">
             <div className="space-y-1">
                 <div className="flex-between">
                     <p className="font-semibold">Human Detection</p>
@@ -21,7 +25,22 @@ export function Details({ handleClose }: DetailsProps) {
             </div>
 
             <div className="space-y-4">
-                <div className="h-[200px] rounded-sm bg-gray-400" />
+                <div>
+                    <div className="flex justify-end">
+                        <Link
+                            href={`/dashboard/${detailId}`}
+                            target="_blank"
+                        >
+                            <Button className="h-fit min-h-0 rounded-none bg-blue-500 px-2 py-1 hover:bg-blue-500/80">
+                                Full Viewer
+                            </Button>
+                        </Link>
+                    </div>
+                    <SplatViewer
+                        splat={detailId}
+                        className="h-[200px] rounded-sm"
+                    />
+                </div>
 
                 <div className="flex-between">
                     <div>

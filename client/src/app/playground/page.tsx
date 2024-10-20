@@ -1,9 +1,9 @@
-import { Plz } from "@/components/splat/plz";
+import { SplatViewer } from "@/components/splat/splat-viewer";
 
 export default function Playground() {
     return (
         <div className="h-full">
-            <Plz />
+            <SplatViewer splat="foo" />
         </div>
     );
 }

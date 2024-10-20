@@ -2,28 +2,29 @@
 
 import { useEffect, useState } from "react";
 import { OrbitControls, Splat } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
+import { Canvas } from "@react-three/fiber";
 
 import "./styles.css";
 
-// Create a component to handle movement and rotation with keys
-function MovableSplat() {
-    const [position, setPosition] = useState([-4, 2.5, 1.5]);
-    const [rotation, setRotation] = useState([0, 0, 0]); // x, y, z rotations
+import { cn } from "@/lib/utils";
+
+function MovableSplat({ splat }: { splat: string }) {
+    const [position, setPosition] = useState<number[]>([-4, 2.5, 1.5]);
+    const [rotation, setRotation] = useState<number[]>([0, 0, 0]);
 
     useEffect(() => {
-        const handleKeyDown = (event) => {
+        const handleKeyDown = (event: KeyboardEvent) => {
             setPosition((prevPosition) => {
                 const [x, y, z] = prevPosition;
                 switch (event.key) {
                     case "ArrowUp":
-                        return [x, y, z - 0.1]; // Move forward
+                        return [x, y, z - 0.1];
                     case "ArrowDown":
-                        return [x, y, z + 0.1]; // Move backward
+                        return [x, y, z + 0.1];
                     case "ArrowLeft":
-                        return [x - 0.1, y, z]; // Move left
+                        return [x - 0.1, y, z];
                     case "ArrowRight":
-                        return [x + 0.1, y, z]; // Move right
+                        return [x + 0.1, y, z];
                     default:
                         return prevPosition;
                 }
@@ -34,10 +35,10 @@ function MovableSplat() {
                 switch (event.key) {
                     case "q":
                     case "Q":
-                        return [x, y + 0.025, z]; // Rotate left (Y axis)
+                        return [x, y + 0.025, z];
                     case "e":
                     case "E":
-                        return [x, y - 0.025, z]; // Rotate right (Y axis)
+                        return [x, y - 0.025, z];
                     default:
                         return prevRotation;
                 }
@@ -50,27 +51,27 @@ function MovableSplat() {
 
     return (
         <Splat
-            src="/foo.splat"
+            src={`/${splat}.splat`}
+            // @ts-expect-error trust me bro
             position={position}
+            // @ts-expect-error trust me bro
             rotation={rotation}
         />
     );
 }
 
-export function Plz() {
-    return (
-        <div className="h-full">
-            <Canvas>
-                <OrbitControls
-                // maxDistance={0.5}
-                // minDistance={0.3}
-                // maxPolarAngle={Math.PI * 0.75}
-                // minPolarAngle={Math.PI * 0.25}
-                // minAzimuthAngle={Math.PI * 1.75}
-                // maxAzimuthAngle={Math.PI * 2.25}
-                />
+interface SplatViewerProps {
+    splat: string;
+    className?: string;
+}
 
-                <MovableSplat />
+export function SplatViewer({ splat, className }: SplatViewerProps) {
+    return (
+        <div className={cn("h-full", className)}>
+            <Canvas>
+                <OrbitControls />
+
+                <MovableSplat splat={splat} />
             </Canvas>
         </div>
     );

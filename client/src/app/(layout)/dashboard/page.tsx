@@ -5,7 +5,6 @@ import NextImage from "next/image";
 import { ActiveDrones } from "@/components/dashboard/ActiveDrones";
 import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
-import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
 import { Nav } from "@/components/dashboard/nav";
@@ -14,7 +13,6 @@ import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
 import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import {
@@ -25,14 +23,8 @@ import {
     BatteryWarning,
     ChevronLeft,
     ChevronRight,
-    Diamond,
     Flame,
-    MapPin,
     Plane,
-    Route,
-    User,
-    Wifi,
-    WifiOff,
 } from "lucide-react";
 
 export interface Person {
@@ -90,7 +82,7 @@ export default function Page() {
     >(null);
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
-    const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
+    const [mapZoom, setMapZoom] = useState(11); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
     const [dataMode, setDataMode] = useState<DataMode>("fake");
     const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
@@ -603,7 +595,10 @@ export default function Page() {
                 {showHumanPanel ? (
                     <div className="absolute right-4 top-16 flex flex-row space-x-2">
                         <div className="space-y-2">
-                            <Details handleClose={handleCloseHumanPanel} />
+                            <Details
+                                detailId="foo" // ! FIX ME
+                                handleClose={handleCloseHumanPanel}
+                            />
                             <NearbyHazards />
                         </div>
                         <RescueWorkflow />

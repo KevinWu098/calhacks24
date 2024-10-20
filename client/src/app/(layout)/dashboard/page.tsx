@@ -66,6 +66,10 @@ type DataMode = "fake" | "real";
 
 const socket = new WebSocket("ws://localhost:8000/ws");
 
+const socketTwo = new WebSocket(
+    "wss://fitting-correctly-lioness.ngrok-free.app/ws_agent"
+);
+
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
     const [center, setCenter] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
@@ -496,6 +500,7 @@ export default function Page() {
 
                 // Define avoid areas based on hazards
                 const avoidAreas = hazards
+                    .filter((h) => !avoidedHazards.includes(h.type))
                     .map((hazard) => {
                         const avoidAreaSize = 0.0005;
                         return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
@@ -556,6 +561,59 @@ export default function Page() {
         [currentLocation, selectedPersons, hazards]
     );
 
+    const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
+    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
+
+    const handleClickMe = () => {
+        socketTwo.send(
+            JSON.stringify({
+                event: "query",
+                message: "display just fire hazards",
+            })
+        );
+    };
+
+    useEffect(() => {
+        socketTwo.onopen = () => {
+            console.log("WebSocket connection established");
+
+            socketTwo.onmessage = (event) => {
+                console.log("Received message");
+                const message = JSON.parse(event.data);
+                console.log("message:", message);
+                const messageEvent = message.event;
+                const hazards = message.hazards;
+                console.log("event:", event);
+
+                if (messageEvent === "display_hazards") {
+                    setDisplayedHazards(hazards);
+                }
+
+                if (messageEvent === "plan_route") {
+                    setAvoidedHazards(hazards);
+                }
+
+                // if (data) {
+                //     console.log("Got data");
+
+                //     Object.keys(data).forEach((key) => {
+                //         if (resolvedIds?.includes(data[key].id)) {
+                //             data[key].severity = "RESOLVED";
+                //         }
+                //     });
+
+                //     setData(data);
+                // } else {
+                //     console.warn("Received unknown message");
+                // }
+            };
+
+            socketTwo.onclose = () => {
+                console.log("Closing websocket");
+            };
+        };
+    }, []);
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
             {/* Overlay container for all UI elements */}
@@ -581,6 +639,8 @@ export default function Page() {
                         dataMode={dataMode}
                         socket={socket}
                     />
+
+                    <Button onClick={handleClickMe}>Click Me!</Button>
                 </div>
                 {/* <div
                     className={cn(
@@ -783,6 +843,8 @@ export default function Page() {
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}
                     planHereRoute={planHereRoute}
+                    displayedHazards={displayedHazards}
+                    avoidedHazards={avoidedHazards}
                 />
             </div>
 

@@ -3,7 +3,6 @@
 import React, { useEffect, useRef } from "react";
 import { Drone, Hazard, Person } from "@/app/(layout)/dashboard/page";
 import H from "@here/maps-api-for-javascript";
-import { FlameIcon } from "lucide-react";
 
 interface MapProps {
     apikey: string;
@@ -18,6 +17,8 @@ interface MapProps {
     handlePersonClick: (person: Person) => void;
     handleHazardClick: (hazard: Hazard) => void;
     handleDroneClick: (droneName: string) => void;
+    displayedHazards: string[];
+    avoidedHazards: string[];
 }
 
 export const HereMap = ({
@@ -33,6 +34,8 @@ export const HereMap = ({
     handlePersonClick,
     handleHazardClick,
     handleDroneClick,
+    displayedHazards,
+    avoidedHazards,
 }: MapProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const map = useRef<H.Map | null>(null);
@@ -145,34 +148,40 @@ export const HereMap = ({
             });
 
             // Add hazard markers
-            hazards.forEach((hazard) => {
-                const flameIcon = new H.map.Icon("/flame.svg", {
-                    size: { w: 32, h: 32 },
-                });
-                const powerIcon = new H.map.Icon("/utility-pole.svg", {
-                    size: { w: 32, h: 32 },
-                });
-
-                // Create a marker with the custom icon
-                const hazardMarker = new H.map.Marker(hazard.location, {
-                    icon: hazard.type === "fire" ? flameIcon : powerIcon,
-                    data: {},
-                });
-
-                hazardMarker.setData("marker");
-                hazardMarker.addEventListener("tap", () => {
-                    handleHazardClick(hazard);
-                    map.current?.getViewModel().setLookAtData({
-                        position: {
-                            lat: hazard.location.lat + 0.001,
-                            lng: hazard.location.lng - 0.0035,
-                        },
-                        zoom: 16,
+            hazards
+                .filter(
+                    (h) =>
+                        displayedHazards.length === 0 ||
+                        displayedHazards.includes(h.type)
+                )
+                .forEach((hazard) => {
+                    const flameIcon = new H.map.Icon("/flame.svg", {
+                        size: { w: 32, h: 32 },
                     });
-                });
+                    const powerIcon = new H.map.Icon("/utility-pole.svg", {
+                        size: { w: 32, h: 32 },
+                    });
 
-                map.current!.addObject(hazardMarker);
-            });
+                    // Create a marker with the custom icon
+                    const hazardMarker = new H.map.Marker(hazard.location, {
+                        icon: hazard.type === "fire" ? flameIcon : powerIcon,
+                        data: {},
+                    });
+
+                    hazardMarker.setData("marker");
+                    hazardMarker.addEventListener("tap", () => {
+                        handleHazardClick(hazard);
+                        map.current?.getViewModel().setLookAtData({
+                            position: {
+                                lat: hazard.location.lat + 0.001,
+                                lng: hazard.location.lng - 0.0035,
+                            },
+                            zoom: 16,
+                        });
+                    });
+
+                    map.current!.addObject(hazardMarker);
+                });
 
             drones.forEach((drone) => {
                 const icon = new H.map.Icon("/drone.svg", {
@@ -199,6 +208,7 @@ export const HereMap = ({
         handleDroneClick,
         handlePersonClick,
         handleHazardClick,
+        displayedHazards,
     ]);
 
     return (

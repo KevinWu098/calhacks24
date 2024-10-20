@@ -13,6 +13,7 @@ import singlestoredb
 import os
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 app = FastAPI()
@@ -59,12 +60,25 @@ with conn.cursor() as cursor:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS drone_status (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255), 
+        name VARCHAR(255),
         is_connected BOOLEAN,
         battery_level INT,
         location_lat FLOAT,
         location_lng FLOAT,
         timestamp DATETIME
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hazards (
+        id VARCHAR(255) PRIMARY KEY,
+        type ENUM('pole', 'fire', 'tree', 'flood'),
+        location_lat FLOAT,
+        location_lng FLOAT,
+        severity ENUM('Low', 'Moderate', 'High', 'Critical'),
+        details TEXT,
+        created_by VARCHAR(255),
+        created_at DATETIME
     )
     """)
 
@@ -132,23 +146,16 @@ def detect_objects(frame):
 async def process_video_stream(websocket: WebSocket):
     global tello
     frame_read = tello.get_frame_read()
-    last_battery_update = 0
     
     try:
         while True:
-            try:
-                data = await websocket.receive_json()
-                event = data["event"]
+            # Capture telemetry data
+            drone_connected = tello.stream_on
+            battery_level = tello.get_battery()
+            location_lat = tello.get_latitude()  # Replace with actual function
+            location_lng = tello.get_longitude() # Replace with actual function
 
-                if event == "DEPLOY":
-                    
-                    # Handle deployment logic
-                    tello.takeoff()
-                    pass
-
-            except asyncio.TimeoutError:
-                pass  # No message received, continue
-            
+            # Process frame
             frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_RGB2BGR)
             if frame is None:
                 continue
@@ -159,42 +166,27 @@ async def process_video_stream(websocket: WebSocket):
             _, buffer = cv2.imencode('.jpg', processed_frame)
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
             
-            # Get drone connection status and battery level
-            drone_connected = tello.stream_on
-            battery_level = tello.get_battery()
-
-            # Insert data into SingleStore
+            # Submit data to the database
             with conn.cursor() as cursor:
-                for person in persons:
-                    cursor.execute("""
-                    INSERT INTO persons (confidence, bbox_x1, bbox_y1, bbox_x2, bbox_y2, image, timestamp)
-                    VALUES (%s, %s, %s, %s, %s, %s, NOW())
-                    """, (person['confidence'], *person['bbox'], jpg_as_text))
-                # Print data being inserted into the database
-                print("Inserting person data:")
-                for person in persons:
-                    print(f"  Confidence: {person['confidence']:.2f}, BBox: {person['bbox']}")
-                
-                print(f"Inserting drone status:")
-                print(f"  Name: Drone 1, Connected: {drone_connected}, Battery: {battery_level}%")
-                print(f"  Location: Lat: 0, Lng: 0")  # Replace with actual lat/lng when available
-                print("---")  # Separator for readability
-                
                 cursor.execute("""
                 INSERT INTO drone_status (name, is_connected, battery_level, location_lat, location_lng, timestamp)
                 VALUES (%s, %s, %s, %s, %s, NOW())
-                """, ("Drone 1", drone_connected, battery_level, 0, 0))  # Replace 0, 0 with actual lat/lng
-            
+                """, ("Drone 1", drone_connected, battery_level, location_lat, location_lng))
+
             conn.commit()
 
+            # Send data to the WebSocket client
             await websocket.send_json({
                 "message": "Data inserted into SingleStore"
             })
-            await asyncio.sleep(0.1)  # Adjust this value to control the update frequency
+            
+            await asyncio.sleep(0.1)  # Adjust this value to control update frequency
+
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     finally:
         disconnect_from_drone()
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

@@ -10,6 +10,8 @@
 #   universal: false
 
 -e file:.
+build==1.2.2.post1
+    # via singlestoredb
 certifi==2024.8.30
     # via requests
 charset-normalizer==3.4.0
@@ -52,10 +54,13 @@ numpy==2.1.2
 opencv-python==4.10.0.84
     # via ultralytics
 packaging==24.1
+    # via build
     # via matplotlib
 pandas==2.2.3
     # via seaborn
     # via ultralytics
+parsimonious==0.10.0
+    # via singlestoredb
 pillow==11.0.0
     # via matplotlib
     # via torchvision
@@ -64,8 +69,12 @@ psutil==6.1.0
     # via ultralytics
 py-cpuinfo==9.0.0
     # via ultralytics
+pyjwt==2.9.0
+    # via singlestoredb
 pyparsing==3.2.0
     # via matplotlib
+pyproject-hooks==1.2.0
+    # via build
 python-dateutil==2.9.0.post0
     # via matplotlib
     # via pandas
@@ -73,16 +82,24 @@ pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via ultralytics
+regex==2024.9.11
+    # via parsimonious
 requests==2.32.3
+    # via singlestoredb
     # via ultralytics
 scipy==1.14.1
     # via ultralytics
 seaborn==0.13.2
     # via ultralytics
 setuptools==75.2.0
+    # via singlestoredb
     # via torch
+singlestoredb==1.7.2
+    # via backend
 six==1.16.0
     # via python-dateutil
+sqlparams==6.1.0
+    # via singlestoredb
 sympy==1.13.1
     # via torch
 torch==2.5.0
@@ -103,3 +120,5 @@ ultralytics-thop==2.0.9
     # via ultralytics
 urllib3==2.2.3
     # via requests
+wheel==0.44.0
+    # via singlestoredb

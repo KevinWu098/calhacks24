@@ -44,7 +44,7 @@ export function DroneAssets({
         }
     }, [isDronesDeployed]);
 
-    if (!isVisible) return null;
+    // if (!isVisible) return null;
 
     const getBatteryIcon = (level: number) => {
         if (level > 90) return <BatteryFull />;
@@ -54,6 +54,10 @@ export function DroneAssets({
     };
 
     const handleClickDrone = (droneName: string) => {
+        if (isDronesDeployed) {
+            return;
+        }
+
         setActiveDrones((prev) => {
             const output = [...prev];
             const index = prev.indexOf(droneName);
@@ -98,13 +102,19 @@ export function DroneAssets({
               ]
             : drones;
 
+    useEffect(() => {
+        setActiveDrones([]);
+    }, [dataMode]);
+
     return (
         <div
-            className={`z-10 w-[300px] space-y-3 rounded-sm bg-white p-3 transition-all duration-500 ease-in-out ${
-                isDronesDeployed
+            className={cn(
+                "z-10 w-[300px] space-y-3 rounded-sm bg-white p-3 transition-all duration-500 ease-in-out",
+                false && isDronesDeployed
                     ? "-translate-x-full opacity-0"
-                    : "translate-x-0 opacity-100"
-            }`}
+                    : "translate-x-0 opacity-100",
+                "translate-x-0 opacity-100"
+            )}
         >
             <div className="flex items-center justify-between">
                 <p className="text-lg font-semibold">Drone Assets</p>
@@ -160,7 +170,10 @@ export function DroneAssets({
                 ))}
 
                 <Button
-                    className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                    className={cn(
+                        "w-full bg-blue-500 text-white hover:bg-blue-600",
+                        isDronesDeployed && "hidden"
+                    )}
                     onClick={onDeployDrones}
                     disabled={isDronesDeployed || activeDrones.length <= 0}
                 >

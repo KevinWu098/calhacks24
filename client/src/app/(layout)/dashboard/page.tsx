@@ -9,11 +9,14 @@ import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
 import { Nav } from "@/components/dashboard/nav";
+import { Details } from "@/components/dashboard/rescue/details";
+import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
 import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import {
     AlertTriangle,
     BatteryFull,
@@ -55,6 +58,7 @@ interface WebSocketData {
 }
 
 export interface Hazard {
+    id: string;
     type: "warning" | "fire";
     location: { lat: number; lng: number };
     severity: "Low" | "Moderate" | "High" | "Critical";
@@ -63,8 +67,9 @@ export interface Hazard {
     createdAt: Date;
 }
 
-// Add this new type definition
 type DataMode = "fake" | "real";
+
+const socket = new WebSocket("ws://localhost:8000/ws");
 
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
@@ -132,6 +137,7 @@ export default function Page() {
             details: "Potential hazard detected",
             createdBy: "AI System",
             createdAt: new Date(),
+            id: crypto.randomUUID(),
         },
         {
             type: "fire",
@@ -140,6 +146,7 @@ export default function Page() {
             details: "Active fire detected",
             createdBy: "Thermal Sensor",
             createdAt: new Date(),
+            id: crypto.randomUUID(),
         },
     ];
 
@@ -195,8 +202,6 @@ export default function Page() {
     // Modify the useEffect for WebSocket to use real data when in "real" mode
     useEffect(() => {
         if (dataMode === "real") {
-            const socket = new WebSocket("ws://localhost:8000/ws");
-
             socket.onopen = () => {
                 console.log("WebSocket connection established");
                 setIsConnected(true);
@@ -264,6 +269,7 @@ export default function Page() {
                         details: "",
                         createdBy: "",
                         createdAt: new Date(),
+                        id: crypto.randomUUID(),
                     },
                     {
                         type: "fire",
@@ -275,6 +281,7 @@ export default function Page() {
                         details: "",
                         createdBy: "",
                         createdAt: new Date(),
+                        id: crypto.randomUUID(),
                     },
                 ]);
 
@@ -296,7 +303,7 @@ export default function Page() {
                         image: "",
                         timestamp: new Date().toLocaleTimeString(),
                     }));
-                console.log(newPersons);
+
                 setPersons(newPersons);
             } else {
                 // Clear fake data when in real mode
@@ -352,10 +359,11 @@ export default function Page() {
     const handleHazardClick = (hazard: Hazard) => {
         setSelectedHazard(hazard);
         setIsRightPanelOpen(true);
+        setShowHumanPanel(false);
         setFocusedItem("hazard");
         if (mapRef) {
             mapRef.panTo(hazard.location);
-            mapRef.setZoom(16);
+            smoothZoom(mapRef, 16, mapRef.getZoom() as number);
         }
     };
 
@@ -394,10 +402,15 @@ export default function Page() {
             } else {
                 setFocusedItem("person");
                 setIsRightPanelOpen(false);
+                setShowHumanPanel(true);
                 setSelectedHazard(null);
                 if (mapRef) {
-                    mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
-                    mapRef.setZoom(16);
+                    const targetLatLng = new google.maps.LatLng(
+                        person.bbox[0],
+                        person.bbox[1] + 0.005 // slight offset for panel
+                    );
+                    mapRef.panTo(targetLatLng);
+                    smoothZoom(mapRef, 16, mapRef.getZoom() as number);
                 }
             }
         },
@@ -411,7 +424,7 @@ export default function Page() {
         const clickedDrone = drones.find((drone) => drone.name === droneName);
         if (mapRef && clickedDrone && "location" in clickedDrone) {
             mapRef.panTo(clickedDrone.location);
-            mapRef.setZoom(15);
+            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
         }
     };
 
@@ -430,16 +443,14 @@ export default function Page() {
         setIsDronesDeployed(true);
         setIsLeftPanelVisible(true);
 
-        // Smoothly zoom in on the drone location
         if (mapRef && currentLocation) {
             mapRef.panTo(currentLocation);
-            mapRef.setZoom(15);
+            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
         }
 
-        if (dataMode != "fake") {
-            // NVM: Handled above in useEffect
+        if (dataMode === "fake") {
             // For fake mode, immediately set the drones
-            // setDrones(generateFakeDrones(currentLocation!));
+            setDrones(generateFakeDrones(currentLocation!));
         } else {
             // For real mode, simulate drone deployment (keep existing logic)
             setTimeout(() => {
@@ -449,15 +460,11 @@ export default function Page() {
             }, 1000);
         }
 
-        // Simulate multiple person detections
-        // setTimeout(() => {
-
-        //}, 3000);
-
-        // Simulate hazard detection
-        // setTimeout(() => {
-
-        // }, 5000);
+        socket.send(
+            JSON.stringify({
+                event: "DEPLOY",
+            })
+        );
     }, [currentLocation, dataMode, generateFakeDrones, mapRef]);
 
     const getSeverityColor = (severity: Hazard["severity"]) => {
@@ -517,30 +524,31 @@ export default function Page() {
         }
     }, [selectMode]);
 
+    const smoothZoom = (
+        map: google.maps.Map,
+        targetZoom: number,
+        currentZoom: number
+    ) => {
+        if (currentZoom !== targetZoom) {
+            google.maps.event.addListenerOnce(map, "zoom_changed", () => {
+                smoothZoom(map, targetZoom, map.getZoom() as number);
+            });
+            setTimeout(() => {
+                map.setZoom(currentZoom + (targetZoom > currentZoom ? 1 : -1));
+            }, 80);
+        }
+    };
+
+    const [showHumanPanel, setShowHumanPanel] = useState(false);
+
+    const handleCloseHumanPanel = () => {
+        setShowHumanPanel(false);
+    };
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
-            {/* Map container */}
-            <div className="absolute inset-0 z-0">
-                <Map
-                    center={center}
-                    zoom={mapZoom}
-                    setZoom={setMapZoom}
-                    currentLocation={isDronesDeployed ? currentLocation : null}
-                    persons={isDronesDeployed ? persons : []}
-                    hazards={isDronesDeployed ? hazards : []}
-                    drones={isDronesDeployed ? drones : []}
-                    handlePersonClick={handlePersonClick}
-                    handleHazardClick={handleHazardClick}
-                    handleDroneClick={handleDroneClick}
-                    onMapLoad={onMapLoad}
-                    rescueRoute={rescueRoute}
-                    selectMode={selectMode}
-                    selectedPersons={selectedPersons}
-                />
-            </div>
-
             {/* Overlay container for all UI elements */}
-            <div className="pointer-events-none relative z-10 h-full w-full">
+            <div className="relative z-10">
                 <div className="pointer-events-auto">
                     <Nav
                         isConnected={isConnected}
@@ -554,7 +562,6 @@ export default function Page() {
                         toggleDataMode={toggleDataMode}
                     /> */}
                 </div>
-
                 <div className="pointer-events-auto absolute left-4 top-16 z-20">
                     <DroneAssets
                         onDeployDrones={handleDeployDrones}
@@ -563,13 +570,16 @@ export default function Page() {
                         dataMode={dataMode}
                     />
                 </div>
-
-                <div className="absolute right-4 top-16">
+                <div
+                    className={cn(
+                        "absolute right-4 top-16",
+                        isDronesDeployed && "translate-x-[120%] transition-all"
+                    )}
+                >
                     <MapOverview />
                 </div>
-
                 {/* Left Sidebar */}
-                <div
+                {/* <div
                     className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
                         isLeftPanelVisible
                             ? "translate-x-0"
@@ -589,19 +599,26 @@ export default function Page() {
                         drones={drones}
                         handleDroneClick={handleDroneClick}
                     />
-                </div>
-
-                <RescueWorkflow />
+                </div> */}
+                {showHumanPanel ? (
+                    <div className="absolute right-4 top-16 flex flex-row space-x-2">
+                        <div className="space-y-2">
+                            <Details handleClose={handleCloseHumanPanel} />
+                            <NearbyHazards />
+                        </div>
+                        <RescueWorkflow />
+                    </div>
+                ) : null}
 
                 {/* Right Sidebar */}
                 <div
-                    className={`pointer-events-auto absolute bottom-0 right-0 top-12 flex w-80 flex-col bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                    className={`pointer-events-auto absolute right-4 top-16 flex w-80 flex-col rounded-sm border-2 border-gray-400 bg-white shadow-lg transition-all duration-300 ease-in-out ${
                         isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                     }`}
                 >
                     {selectedHazard && (
-                        <div className="flex h-full flex-col p-4">
-                            <div className="mb-4 flex items-center justify-between">
+                        <div className="flex h-fit flex-col rounded-sm bg-white p-4">
+                            <div className="mb-4 flex h-fit items-center justify-between bg-white">
                                 <h2 className="text-xl font-bold">
                                     {selectedHazard.type === "warning" ? (
                                         <AlertTriangle
@@ -721,7 +738,10 @@ export default function Page() {
                     {/* Toggle button for right panel */}
                     <button
                         className={`absolute -left-10 top-1/2 z-10 -translate-y-1/2 rounded-l-md bg-white p-2 shadow-md transition-all duration-300 hover:bg-gray-100`}
-                        onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+                        onClick={() => {
+                            setIsRightPanelOpen(!isRightPanelOpen);
+                            setShowHumanPanel(false);
+                        }}
                     >
                         {isRightPanelOpen ? (
                             <ChevronRight size={24} />
@@ -730,30 +750,48 @@ export default function Page() {
                         )}
                     </button>
                 </div>
-
-                {/* Floating Hazard Panel */}
-                {isDronesDeployed && (
-                    <div className="pointer-events-auto absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                        {hazards.map((hazard, index) => (
-                            <button
-                                key={index}
-                                className={`rounded-full p-2 ${
-                                    hazard.type === "warning"
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500"
-                                } text-white`}
-                                onClick={() => handleHazardClick(hazard)}
-                            >
-                                {hazard.type === "warning" ? (
-                                    <AlertTriangle size={24} />
-                                ) : (
-                                    <Flame size={24} />
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
+
+            <div className="absolute inset-0 z-0">
+                <Map
+                    center={center}
+                    zoom={mapZoom}
+                    setZoom={setMapZoom}
+                    currentLocation={isDronesDeployed ? currentLocation : null}
+                    persons={isDronesDeployed ? persons : []}
+                    hazards={isDronesDeployed ? hazards : []}
+                    drones={isDronesDeployed ? drones : []}
+                    handlePersonClick={handlePersonClick}
+                    handleHazardClick={handleHazardClick}
+                    handleDroneClick={handleDroneClick}
+                    onMapLoad={onMapLoad}
+                    rescueRoute={rescueRoute}
+                    selectMode={selectMode}
+                    selectedPersons={selectedPersons}
+                />
+            </div>
+
+            {isDronesDeployed && (
+                <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
+                    {hazards.map((hazard, index) => (
+                        <button
+                            key={index}
+                            className={`rounded-full p-2 ${
+                                hazard.type === "warning"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                            } text-white`}
+                            onClick={() => handleHazardClick(hazard)}
+                        >
+                            {hazard.type === "warning" ? (
+                                <AlertTriangle size={24} />
+                            ) : (
+                                <Flame size={24} />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

@@ -2,7 +2,7 @@ import { Separator } from "@/components/ui/separator";
 
 export function RescueWorkflow() {
     return (
-        <div className="absolute right-0 h-full w-[250px] rounded-md border-2 border-gray-400 bg-white p-3">
+        <div className="h-full w-[250px] rounded-md border-2 border-gray-400 bg-white p-3">
             <div>
                 <p className="font-semibold">Rescue Workflow</p>
                 <Separator className="" />
@@ -28,6 +28,8 @@ export function RescueWorkflow() {
                     <p className="text-xl font-bold leading-none">26 min</p>
                 </div>
             </div>
+
+            <Separator className="bg-black" />
         </div>
     );
 }

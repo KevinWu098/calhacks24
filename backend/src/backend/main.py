@@ -32,6 +32,34 @@ def connect_to_drone():
     tello = Tello()
     tello.connect()
     tello.streamon()
+    
+    time.sleep(4)
+    
+    tello.takeoff()
+
+    tello.move_forward(200)
+
+    # circle()
+
+    tello.send_rc_control(0,0,0,0)  
+    time.sleep(0.1)
+    # Turns motors on:
+    tello.send_rc_control(-100,-100,-100,100)
+    time.sleep(2)
+    tello.send_rc_control(0,10,20,0)
+    time.sleep(3)
+    tello.send_rc_control(0,0,0,0)
+    time.sleep(2)
+
+    v_up = 0
+    for _ in range(4):
+        tello.send_rc_control(40, -5, v_up, -35)
+        time.sleep(4)
+        tello.send_rc_control(0,0,0,0)
+        time.sleep(0.5)
+
+    tello.land()
+    
 
 def disconnect_from_drone():
     global tello
@@ -64,9 +92,22 @@ async def process_video_stream(websocket: WebSocket):
     global tello
     frame_read = tello.get_frame_read()
     last_battery_update = 0
-    
+  
     try:
         while True:
+            try:
+                data = await websocket.receive_json()
+                event = data["event"]
+
+                if event == "DEPLOY":
+                    # ! Do something here
+                    
+                    tello.takeoff()
+                    pass
+
+            except asyncio.TimeoutError:
+                pass  # No message received, continue
+            
             frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_RGB2BGR)
             if frame is None:
                 continue

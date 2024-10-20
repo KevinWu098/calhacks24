@@ -5,18 +5,18 @@ import NextImage from "next/image";
 import { ActiveDrones } from "@/components/dashboard/ActiveDrones";
 import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
-import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
+import { HereMap } from "@/components/dashboard/map/new-map";
 import { Nav } from "@/components/dashboard/nav";
 import { Details } from "@/components/dashboard/rescue/details";
 import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
 import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 import {
     AlertTriangle,
     BatteryFull,
@@ -25,18 +25,12 @@ import {
     BatteryWarning,
     ChevronLeft,
     ChevronRight,
-    Diamond,
     Flame,
-    MapPin,
     Plane,
-    Route,
-    User,
-    Wifi,
-    WifiOff,
 } from "lucide-react";
 
 export interface Person {
-    id: string;
+    id: number;
     confidence: number;
     bbox: [number, number, number, number];
     image: string;
@@ -47,8 +41,8 @@ export interface Drone {
     name: string;
     isConnected: boolean;
     batteryLevel: number;
-    startingCoordinate: string;
     location: { lat: number; lng: number };
+    timestamp: string;
 }
 
 interface WebSocketData {
@@ -90,7 +84,7 @@ export default function Page() {
     >(null);
     const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
-    const [mapZoom, setMapZoom] = useState(10); // Start with a more zoomed out view
+    const [mapZoom, setMapZoom] = useState(11); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
     const [dataMode, setDataMode] = useState<DataMode>("fake");
     const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
@@ -105,6 +99,7 @@ export default function Page() {
             batteryLevel: 85,
             startingCoordinate: "40.7128° N, 74.0060° W",
             location: { lat: 40.7128, lng: -74.006 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone Y456",
@@ -112,6 +107,7 @@ export default function Page() {
             batteryLevel: 72,
             startingCoordinate: "34.0522° N, 118.2437° W",
             location: { lat: 34.0522, lng: -118.2437 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone Z789",
@@ -119,6 +115,7 @@ export default function Page() {
             batteryLevel: 93,
             startingCoordinate: "51.5074° N, 0.1278° W",
             location: { lat: 51.5074, lng: -0.1278 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone A012",
@@ -126,6 +123,7 @@ export default function Page() {
             batteryLevel: 64,
             startingCoordinate: "35.6762° N, 139.6503° E",
             location: { lat: 35.6762, lng: 139.6503 },
+            timestamp: new Date().toISOString(),
         },
     ];
 
@@ -163,6 +161,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone Y456",
@@ -173,6 +172,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone Z789",
@@ -183,6 +183,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone A012",
@@ -193,63 +194,34 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
             ];
         },
         []
     );
 
-    // Modify the useEffect for WebSocket to use real data when in "real" mode
+    // Modify the useEffect hook that fetches data
     useEffect(() => {
+        // Fetch data from SingleStore when real-time mode is active
         if (dataMode === "real") {
-            socket.onopen = () => {
-                console.log("WebSocket connection established");
-                setIsConnected(true);
+            const fetchData = async () => {
+                try {
+                    const [personsResponse, droneResponse] = await Promise.all([
+                        axios.get("http://localhost:8000/api/persons"),
+                        axios.get("http://localhost:8000/api/drone_status"),
+                    ]);
+
+                    setPersons(personsResponse.data);
+                    setDrones([droneResponse.data]);
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                }
             };
 
-            socket.onmessage = (event) => {
-                const data: WebSocketData = JSON.parse(event.data);
-                setPersons((prevPersons) => {
-                    const lastPerson = data.persons[data.persons.length - 1];
-                    if (lastPerson) {
-                        return [
-                            {
-                                ...lastPerson,
-                                image: data.frame,
-                                timestamp: new Date().toLocaleTimeString(),
-                            },
-                        ];
-                    }
-                    return prevPersons;
-                });
-                setDroneFeed(data.frame);
+            const interval = setInterval(fetchData, 1000); // Fetch data every second
 
-                // Update drone status and battery level
-                setDrones((prevDrones) => {
-                    const existingDrone = prevDrones.find(
-                        (d) => d.name === data.droneStatus.name
-                    );
-                    if (existingDrone) {
-                        return prevDrones.map((drone) =>
-                            drone.name === data.droneStatus.name
-                                ? data.droneStatus
-                                : drone
-                        );
-                    } else {
-                        return [...prevDrones, data.droneStatus];
-                    }
-                });
-            };
-
-            socket.onclose = () => {
-                console.log("WebSocket connection closed");
-                setIsConnected(false);
-                setDrones([]);
-            };
-
-            return () => {
-                socket.close();
-            };
+            return () => clearInterval(interval);
         }
     }, [dataMode]);
 
@@ -301,7 +273,7 @@ export default function Page() {
                             0,
                         ],
                         image: "",
-                        timestamp: new Date().toLocaleTimeString(),
+                        timestamp: new Date().toISOString(),
                     }));
 
                 setPersons(newPersons);
@@ -493,6 +465,14 @@ export default function Page() {
                 stopover: true,
             }));
 
+            const hazardWaypoints = hazards.map((h) => ({
+                location: new google.maps.LatLng(
+                    h.location.lat,
+                    h.location.lng
+                ),
+                stopover: true,
+            }));
+
             directionsService.route(
                 {
                     origin: new google.maps.LatLng(
@@ -503,13 +483,26 @@ export default function Page() {
                         currentLocation.lat,
                         currentLocation.lng
                     ),
-                    waypoints: waypoints,
-                    optimizeWaypoints: true,
+                    waypoints: [...waypoints],
+                    // optimizeWaypoints: true,
                     travelMode: google.maps.TravelMode.WALKING,
+                    provideRouteAlternatives: true,
                 },
                 (result, status) => {
+                    // legitRoute = null
+                    // for (const route of result?.routes ?? []) {
+                    //     for (const wp of route.waypoint_order) {
+                    //         if
+                    //     }
+                    // }
+
+                    console.log(result?.routes);
+
                     if (status === google.maps.DirectionsStatus.OK && result) {
                         const route = result.routes[0].overview_path;
+
+                        console.log(result.routes[0]);
+
                         setRescueRoute(route);
                     }
                 }
@@ -571,14 +564,14 @@ export default function Page() {
                         socket={socket}
                     />
                 </div>
-                <div
+                {/* <div
                     className={cn(
                         "absolute right-4 top-16",
                         isDronesDeployed && "translate-x-[120%] transition-all"
                     )}
                 >
                     <MapOverview />
-                </div>
+                </div> */}
                 {/* Left Sidebar */}
                 {/* <div
                     className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
@@ -604,7 +597,10 @@ export default function Page() {
                 {showHumanPanel ? (
                     <div className="absolute right-4 top-16 flex flex-row space-x-2">
                         <div className="space-y-2">
-                            <Details handleClose={handleCloseHumanPanel} />
+                            <Details
+                                detailId="foo" // ! FIX ME
+                                handleClose={handleCloseHumanPanel}
+                            />
                             <NearbyHazards />
                         </div>
                         <RescueWorkflow />
@@ -754,14 +750,17 @@ export default function Page() {
             </div>
 
             <div className="absolute inset-0 z-0">
-                <Map
+                <HereMap
+                    apikey={process.env.NEXT_PUBLIC_HERE_KEY as string}
                     center={center}
                     zoom={mapZoom}
                     setZoom={setMapZoom}
-                    currentLocation={isDronesDeployed ? currentLocation : null}
-                    persons={isDronesDeployed ? persons : []}
-                    hazards={isDronesDeployed ? hazards : []}
-                    drones={isDronesDeployed ? drones : []}
+                    currentLocation={
+                        true || isDronesDeployed ? currentLocation : null
+                    }
+                    persons={true || isDronesDeployed ? persons : []}
+                    hazards={true || isDronesDeployed ? hazards : []}
+                    drones={true || isDronesDeployed ? drones : []}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}

@@ -13,6 +13,7 @@ import {
     WifiOff,
     X,
 } from "lucide-react";
+import axios from "axios";
 
 interface Drone {
     name: string;
@@ -94,37 +95,52 @@ export function DroneAssets({
         });
     };
 
-    const dronesToDisplay =
-        dataMode === "fake" && drones.length === 0
-            ? [
-                  {
-                      name: "Drone X123",
-                      isConnected: true,
-                      batteryLevel: 85,
-                      startingCoordinate: "40.7128° N, 74.0060° W",
-                  },
-                  {
-                      name: "Drone Y456",
-                      isConnected: true,
-                      batteryLevel: 72,
-                      startingCoordinate: "34.0522° N, 118.2437° W",
-                  },
-                  {
-                      name: "Drone Z789",
-                      isConnected: true,
-                      batteryLevel: 93,
-                      startingCoordinate: "51.5074° N, 0.1278° W",
-                  },
-                  {
-                      name: "Drone A012",
-                      isConnected: true,
-                      batteryLevel: 64,
-                      startingCoordinate: "35.6762° N, 139.6503° E",
-                  },
-              ]
-            : dataMode === "real"
-              ? availableDrones
-              : drones;
+    // fetch drone data
+    useEffect(() => {
+        const fetchDronesData = async () => {
+            try {
+                // Fetching real-time data from the database
+                const response = await axios.get('http://localhost:8000/api/drone_status');
+                setDrones([response.data]); // Set the drone data to state
+            } catch (error) {
+                console.error("Error fetching drone data:", error);
+            }
+        };
+    
+        // Polling the data every second
+        const interval = setInterval(fetchDronesData, 1000);
+    
+        return () => clearInterval(interval); // Cleanup the interval
+    }, []);
+
+    const dronesToDisplay = drones.length > 0
+    ? drones // Use the real-time data from the database
+    : [
+        {
+            name: "Drone X123",
+            isConnected: true,
+            batteryLevel: 85,
+            location: { lat: 40.7128, lng: -74.0060 },
+        },
+        {
+            name: "Drone Y456",
+            isConnected: true,
+            batteryLevel: 72,
+            location: { lat: 34.0522, lng: -118.2437 },
+        },
+        {
+            name: "Drone Z789",
+            isConnected: true,
+            batteryLevel: 93,
+            location: { lat: 51.5074, lng: -0.1278 },
+        },
+        {
+            name: "Drone A012",
+            isConnected: true,
+            batteryLevel: 64,
+            location: { lat: 35.6762, lng: 139.6503 },
+        },
+    ];
 
     useEffect(() => {
         setActiveDrones([]);

@@ -30,6 +30,8 @@ av==13.1.0
 bech32==1.2.0
     # via cosmpy
     # via uagents
+build==1.2.2.post1
+    # via singlestoredb
 certifi==2024.8.30
     # via requests
 charset-normalizer==3.4.0
@@ -37,6 +39,7 @@ charset-normalizer==3.4.0
 click==8.1.7
     # via uvicorn
 colorama==0.4.6
+    # via build
     # via click
     # via tqdm
 contourpy==1.3.0
@@ -111,10 +114,13 @@ opencv-python==4.10.0.84
     # via ultralytics
 packaging==24.1
     # via apispec
+    # via build
     # via matplotlib
 pandas==2.2.3
     # via seaborn
     # via ultralytics
+parsimonious==0.10.0
+    # via singlestoredb
 pillow==11.0.0
     # via djitellopy
     # via matplotlib
@@ -136,12 +142,18 @@ pydantic==2.8.2
     # via uagents
 pydantic-core==2.20.1
     # via pydantic
+pyjwt==2.9.0
+    # via singlestoredb
 pyparsing==3.2.0
     # via matplotlib
+pyproject-hooks==1.2.0
+    # via build
 python-dateutil==2.9.0.post0
     # via cosmpy
     # via matplotlib
     # via pandas
+python-dotenv==1.0.1
+    # via backend
 pytz==2024.2
     # via pandas
 pyyaml==6.0.2
@@ -149,8 +161,11 @@ pyyaml==6.0.2
 referencing==0.35.1
     # via jsonschema
     # via jsonschema-specifications
+regex==2024.9.11
+    # via parsimonious
 requests==2.32.3
     # via cosmpy
+    # via singlestoredb
     # via ultralytics
 rpds-py==0.20.0
     # via jsonschema
@@ -160,12 +175,17 @@ scipy==1.14.1
 seaborn==0.13.2
     # via ultralytics
 setuptools==75.2.0
+    # via singlestoredb
     # via torch
+singlestoredb==1.7.2
+    # via backend
 six==1.16.0
     # via ecdsa
     # via python-dateutil
 sniffio==1.3.1
     # via anyio
+sqlparams==6.1.0
+    # via singlestoredb
 starlette==0.40.0
     # via fastapi
 sympy==1.13.1
@@ -194,8 +214,11 @@ ultralytics-thop==2.0.9
 urllib3==2.2.3
     # via requests
 uvicorn==0.30.6
+    # via backend
     # via uagents
 websockets==10.4
     # via uagents
+wheel==0.44.0
+    # via singlestoredb
 yarl==1.15.5
     # via aiohttp

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import NextImage from "next/image";
 import { ActiveDrones } from "@/components/dashboard/ActiveDrones";
 import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
@@ -14,6 +14,7 @@ import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
 import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { calculateRescueTime, cn } from "@/lib/utils";
 import axios from "axios";
@@ -54,7 +55,7 @@ interface WebSocketData {
 
 export interface Hazard {
     id: string;
-    type: "warning" | "fire";
+    type: "power" | "fire";
     location: { lat: number; lng: number };
     severity: "Low" | "Moderate" | "High" | "Critical";
     details: string;
@@ -95,8 +96,6 @@ export default function Page() {
     const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
     const [rescueRoute, setRescueRoute] = useState<google.maps.LatLng[]>([]);
     const [selectMode, setSelectMode] = useState(false);
-    const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
-    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
     const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
     const [rescueTime, setRescueTime] = useState<number | null>(null);
     const [rescueAccuracy, setRescueAccuracy] = useState<number>(95); // Default accuracy
@@ -139,7 +138,7 @@ export default function Page() {
 
     const fakeHazards: Hazard[] = [
         {
-            type: "warning",
+            type: "power",
             location: { lat: 0, lng: 0 },
             severity: "Low",
             details: "Potential hazard detected",
@@ -242,7 +241,7 @@ export default function Page() {
                 // Set hazards with adjusted offsets
                 setHazards([
                     {
-                        type: "warning",
+                        type: "power",
                         location: {
                             lat: center.lat - 0.003,
                             lng: center.lng + 0.0024,
@@ -481,6 +480,75 @@ export default function Page() {
         setShowHumanPanel(false);
     };
 
+    const [displayedHazards, setDisplayedHazards] = useState<string[]>(["all"]);
+    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
+    const [showPeople, setShowPeople] = useState<boolean>(true);
+    const [showDrones, setShowDrones] = useState<boolean>(true);
+    const [query, setQuery] = useState("");
+
+    const handleQuery = (input: string) => {
+        if (input.trim() !== "") {
+            socketTwo.send(
+                JSON.stringify({
+                    event: "query",
+                    message: input,
+                })
+            );
+            console.log("Query sent:", input);
+            setQuery("");
+        }
+    };
+
+    const handleInputChange = useCallback(
+        (e: { currentTarget: { value: React.SetStateAction<string> } }) => {
+            setQuery(e.currentTarget.value);
+        },
+        []
+    );
+
+    useEffect(() => {
+        socketTwo.onopen = () => {
+            console.log("WebSocket connection established");
+
+            socketTwo.onmessage = (event) => {
+                console.log("Received message");
+                const message = JSON.parse(event.data);
+                console.log("message:", message);
+                const messageEvent = message.event;
+                const hazards = message.hazards;
+                console.log("event:", event);
+
+                if (messageEvent === "display_hazards") {
+                    setDisplayedHazards(hazards);
+                    setShowDrones(message.drones);
+                    setShowPeople(message.humans);
+                }
+
+                if (messageEvent === "plan_route") {
+                    setAvoidedHazards(hazards);
+                }
+
+                // if (data) {
+                //     console.log("Got data");
+
+                //     Object.keys(data).forEach((key) => {
+                //         if (resolvedIds?.includes(data[key].id)) {
+                //             data[key].severity = "RESOLVED";
+                //         }
+                //     });
+
+                //     setData(data);
+                // } else {
+                //     console.warn("Received unknown message");
+                // }
+            };
+
+            socketTwo.onclose = () => {
+                console.log("Closing websocket");
+            };
+        };
+    }, []);
+
     const planHereRoute = useCallback(
         (map: any, router: any) => {
             if (map.current && router.current && selectedPersons.length > 0) {
@@ -570,56 +638,6 @@ export default function Page() {
         [center, selectedPersons, hazards, avoidedHazards]
     );
 
-    const handleClickMe = () => {
-        socketTwo.send(
-            JSON.stringify({
-                event: "query",
-                message: "display just fire hazards",
-            })
-        );
-    };
-
-    useEffect(() => {
-        socketTwo.onopen = () => {
-            console.log("WebSocket connection established");
-
-            socketTwo.onmessage = (event) => {
-                console.log("Received message");
-                const message = JSON.parse(event.data);
-                console.log("message:", message);
-                const messageEvent = message.event;
-                const hazards = message.hazards;
-                console.log("event:", event);
-
-                if (messageEvent === "display_hazards") {
-                    setDisplayedHazards(hazards);
-                }
-
-                if (messageEvent === "plan_route") {
-                    setAvoidedHazards(hazards);
-                }
-
-                // if (data) {
-                //     console.log("Got data");
-
-                //     Object.keys(data).forEach((key) => {
-                //         if (resolvedIds?.includes(data[key].id)) {
-                //             data[key].severity = "RESOLVED";
-                //         }
-                //     });
-
-                //     setData(data);
-                // } else {
-                //     console.warn("Received unknown message");
-                // }
-            };
-
-            socketTwo.onclose = () => {
-                console.log("Closing websocket");
-            };
-        };
-    }, []);
-
     // Load fake data
     useEffect(() => {
         if (dataMode === "fake") {
@@ -653,7 +671,7 @@ export default function Page() {
             const fakeHazards: Hazard[] = [
                 {
                     id: "hazard1",
-                    type: "warning",
+                    type: "power",
                     location: { lat: 35.7816, lng: -78.6402 }, // Northwest of center
                     severity: "Moderate",
                     details: "Potential structural damage detected",
@@ -739,8 +757,6 @@ export default function Page() {
                         dataMode={dataMode}
                         socket={socket}
                     />
-
-                    <Button onClick={handleClickMe}>Click Me!</Button>
                 </div>
                 {/* <div
                     className={cn(
@@ -797,7 +813,7 @@ export default function Page() {
                         <div className="flex h-fit flex-col rounded-sm bg-white p-4">
                             <div className="mb-4 flex h-fit items-center justify-between bg-white">
                                 <h2 className="text-xl font-bold">
-                                    {selectedHazard.type === "warning" ? (
+                                    {selectedHazard.type === "power" ? (
                                         <AlertTriangle
                                             className="mr-2 inline"
                                             size={24}
@@ -808,8 +824,8 @@ export default function Page() {
                                             size={24}
                                         />
                                     )}
-                                    {selectedHazard.type === "warning"
-                                        ? "Warning"
+                                    {selectedHazard.type === "power"
+                                        ? "power"
                                         : "Fire"}{" "}
                                     Hazard
                                 </h2>
@@ -945,6 +961,8 @@ export default function Page() {
                     displayedHazards={displayedHazards}
                     avoidedHazards={avoidedHazards}
                     setMapInstance={setMapInstance}
+                    showDrones={showDrones}
+                    showPeople={showPeople}
                 />
             </div>
 
@@ -954,7 +972,7 @@ export default function Page() {
                         <button
                             key={index}
                             className={`rounded-full p-2 ${
-                                hazardType === "warning"
+                                hazardType === "power"
                                     ? "bg-yellow-500"
                                     : "bg-red-500"
                             } text-white`}
@@ -964,7 +982,7 @@ export default function Page() {
                                 )
                             }
                         >
-                            {hazardType === "warning" ? (
+                            {hazardType === "power" ? (
                                 <AlertTriangle size={24} />
                             ) : (
                                 <Flame size={24} />
@@ -988,6 +1006,21 @@ export default function Page() {
                     />
                 </div>
             )}
+
+            <div className="absolute bottom-8 left-1/2 -translate-x-[50%]">
+                <Input
+                    className="w-[500px] text-lg"
+                    placeholder="Interact with data..."
+                    value={query}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            handleQuery(e.currentTarget.value);
+                            setQuery("");
+                        }
+                    }}
+                    onChange={handleInputChange}
+                />
+            </div>
         </div>
     );
 }

@@ -19,6 +19,8 @@ interface MapProps {
     displayedHazards: string[];
     avoidedHazards: string[];
     setMapInstance: (map: H.Map) => void;
+    showDrones: boolean;
+    showPeople: boolean;
 }
 
 export const HereMap = ({
@@ -36,6 +38,8 @@ export const HereMap = ({
     displayedHazards,
     avoidedHazards,
     setMapInstance,
+    showPeople,
+    showDrones,
 }: MapProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const map = useRef<H.Map | null>(null);
@@ -104,42 +108,54 @@ export const HereMap = ({
         if (map.current) {
             map.current.getObjects().forEach((obj) => {
                 if (obj.getData && obj.getData() === "marker") {
-                    map.current!.removeObject(obj);
+                    map.current?.removeObject(obj);
                 }
             });
 
-            persons.forEach((person) => {
-                const icon = new H.map.Icon("/location-man.svg", {
-                    size: { w: 32, h: 32 },
+            if (_center) {
+                const centerMarker = new H.map.Marker(_center);
+
+                centerMarker.setData("marker");
+                centerMarker.addEventListener("tap", () => {
+                    handleDroneClick("You");
                 });
 
-                const personMarker = new H.map.Marker(
-                    { lat: person.bbox[0], lng: person.bbox[1] },
-                    {
-                        icon: icon,
-                        data: {},
-                    }
-                );
-                personMarker.setData("marker");
-                personMarker.addEventListener("tap", () => {
-                    handlePersonClick(person);
-                    map.current?.getViewModel().setLookAtData({
-                        position: {
-                            lat: person.bbox[0] - 0.001,
-                            lng: person.bbox[1] + 0.0035,
-                        },
-                        zoom: 16,
+                map.current.addObject(centerMarker);
+            }
+
+            showPeople &&
+                persons.forEach((person) => {
+                    const icon = new H.map.Icon("/location-man.svg", {
+                        size: { w: 32, h: 32 },
                     });
-                });
 
-                map.current!.addObject(personMarker);
-            });
+                    const personMarker = new H.map.Marker(
+                        { lat: person.bbox[0], lng: person.bbox[1] },
+                        {
+                            icon: icon,
+                            data: {},
+                        }
+                    );
+                    personMarker.setData("marker");
+                    personMarker.addEventListener("tap", () => {
+                        handlePersonClick(person);
+                        map.current?.getViewModel().setLookAtData({
+                            position: {
+                                lat: person.bbox[0] - 0.001,
+                                lng: person.bbox[1] + 0.0035,
+                            },
+                            zoom: 16,
+                        });
+                    });
+
+                    map.current!.addObject(personMarker);
+                });
 
             // Add hazard markers
             hazards
                 .filter(
                     (h) =>
-                        displayedHazards.length === 0 ||
+                        displayedHazards[0] === "all" ||
                         displayedHazards.includes(h.type)
                 )
                 .forEach((hazard) => {
@@ -171,33 +187,25 @@ export const HereMap = ({
                     map.current!.addObject(hazardMarker);
                 });
 
-            drones.forEach((drone) => {
-                const icon = new H.map.Icon("/drone.svg", {
-                    size: { w: 32, h: 32 },
-                });
+            showDrones &&
+                drones.forEach((drone) => {
+                    const icon = new H.map.Icon("/drone.svg", {
+                        size: { w: 32, h: 32 },
+                    });
 
-                const droneMarker = new H.map.Marker(drone.location, {
-                    icon: icon,
-                    data: {},
-                });
-                droneMarker.setData("marker");
-                droneMarker.addEventListener("tap", () => {
-                    handleDroneClick(drone.name);
-                });
+                    const droneMarker = new H.map.Marker(drone.location, {
+                        icon: icon,
+                        data: {},
+                    });
+                    droneMarker.setData("marker");
+                    droneMarker.addEventListener("tap", () => {
+                        handleDroneClick(drone.name);
+                    });
 
-                map.current!.addObject(droneMarker);
-            });
+                    map.current!.addObject(droneMarker);
+                });
         }
-    }, [
-        _center,
-        persons,
-        hazards,
-        drones,
-        handleDroneClick,
-        handlePersonClick,
-        handleHazardClick,
-        displayedHazards,
-    ]);
+    }, [_center, persons, hazards, drones, displayedHazards]);
 
     return (
         <div

@@ -7,6 +7,11 @@ authors = [
 ]
 dependencies = [
     "ultralytics>=8.3.17",
+    "singlestoredb>=1.7.2",
+    "uvicorn>=0.32.0",
+    "fastapi>=0.115.2",
+    "djitellopy>=2.5.0",
+    "python-dotenv>=1.0.1",
 ]
 readme = "README.md"
 requires-python = ">= 3.8"

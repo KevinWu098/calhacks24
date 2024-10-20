@@ -18,6 +18,7 @@
         "@radix-ui/react-slot": "^1.1.0",
         "@radix-ui/react-switch": "^1.1.1",
         "@react-google-maps/api": "^2.20.3",
+        "axios": "^1.7.7",
         "@react-three/drei": "^9.114.6",
         "@react-three/fiber": "^8.17.10",
         "class-variance-authority": "^0.7.0",

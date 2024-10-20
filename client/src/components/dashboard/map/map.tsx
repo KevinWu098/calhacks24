@@ -136,22 +136,22 @@ export function Map({
                     </>
                 )} */}
 
-                {/* {hazards.map((hazard, index) => (
+                {hazards.map((hazard, index) => (
                     <Marker
-                        key={index + 99}
+                        key={hazard.id}
                         position={hazard.location}
                         onClick={() => handleHazardClick(hazard)}
                         icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             fillColor:
-                                hazard.type === "warning" ? "yellow" : "red",
+                                hazard.type === "warning" ? "orange" : "red",
                             fillOpacity: 1,
                             strokeColor: "white",
                             strokeWeight: 2,
                             scale: 8,
                         }}
                     />
-                ))} */}
+                ))}
 
                 {persons.map((person) => (
                     <Marker

@@ -56,6 +56,7 @@ interface WebSocketData {
 }
 
 export interface Hazard {
+    id: string;
     type: "warning" | "fire";
     location: { lat: number; lng: number };
     severity: "Low" | "Moderate" | "High" | "Critical";
@@ -355,7 +356,7 @@ export default function Page() {
         setFocusedItem("hazard");
         if (mapRef) {
             mapRef.panTo(hazard.location);
-            mapRef.setZoom(16);
+            smoothZoom(mapRef, 16, mapRef.getZoom() as number);
         }
     };
 
@@ -396,8 +397,12 @@ export default function Page() {
                 setIsRightPanelOpen(false);
                 setSelectedHazard(null);
                 if (mapRef) {
-                    mapRef.panTo({ lat: person.bbox[0], lng: person.bbox[1] });
-                    mapRef.setZoom(16);
+                    const targetLatLng = new google.maps.LatLng(
+                        person.bbox[0],
+                        person.bbox[1]
+                    );
+                    mapRef.panTo(targetLatLng);
+                    smoothZoom(mapRef, 16, mapRef.getZoom() as number);
                 }
             }
         },
@@ -411,7 +416,7 @@ export default function Page() {
         const clickedDrone = drones.find((drone) => drone.name === droneName);
         if (mapRef && clickedDrone && "location" in clickedDrone) {
             mapRef.panTo(clickedDrone.location);
-            mapRef.setZoom(15);
+            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
         }
     };
 
@@ -430,16 +435,14 @@ export default function Page() {
         setIsDronesDeployed(true);
         setIsLeftPanelVisible(true);
 
-        // Smoothly zoom in on the drone location
         if (mapRef && currentLocation) {
             mapRef.panTo(currentLocation);
-            mapRef.setZoom(15);
+            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
         }
 
-        if (dataMode != "fake") {
-            // NVM: Handled above in useEffect
+        if (dataMode === "fake") {
             // For fake mode, immediately set the drones
-            // setDrones(generateFakeDrones(currentLocation!));
+            setDrones(generateFakeDrones(currentLocation!));
         } else {
             // For real mode, simulate drone deployment (keep existing logic)
             setTimeout(() => {
@@ -448,16 +451,6 @@ export default function Page() {
                 );
             }, 1000);
         }
-
-        // Simulate multiple person detections
-        // setTimeout(() => {
-
-        //}, 3000);
-
-        // Simulate hazard detection
-        // setTimeout(() => {
-
-        // }, 5000);
 
         socket.send(
             JSON.stringify({
@@ -522,6 +515,21 @@ export default function Page() {
             setSelectedPersons([]);
         }
     }, [selectMode]);
+
+    const smoothZoom = (
+        map: google.maps.Map,
+        targetZoom: number,
+        currentZoom: number
+    ) => {
+        if (currentZoom !== targetZoom) {
+            google.maps.event.addListenerOnce(map, "zoom_changed", () => {
+                smoothZoom(map, targetZoom, map.getZoom() as number);
+            });
+            setTimeout(() => {
+                map.setZoom(currentZoom + (targetZoom > currentZoom ? 1 : -1));
+            }, 80);
+        }
+    };
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">

@@ -155,9 +155,25 @@ async def search_and_rescue(ctx: Context):
 
         for obj in drone_data.detected_objects:
             if obj.class_name == "person" and obj.confidence > 0.7:
+                detection_data = {
+                    "type": "person",
+                    "location": obj.bbox,
+                    "timestamp": time.time(),
+                    "confidence": obj.confidence
+                }
+                await ctx.send("detection", detection_data)
+                await ctx.send("drone_metadata", drone_data)  # Send updated drone data
                 await approach_person(ctx, obj)
                 return
             elif obj.class_name in ["tree", "fire", "flood", "power line"] and obj.confidence > 0.6:
+                detection_data = {
+                    "type": obj.class_name,
+                    "location": obj.bbox,
+                    "timestamp": time.time(),
+                    "confidence": obj.confidence
+                }
+                await ctx.send("detection", detection_data)
+                await ctx.send("drone_metadata", drone_data)  # Send updated drone data
                 ctx.logger.info(f"Detected {obj.class_name} with confidence {obj.confidence}")
                 return
 

@@ -15,7 +15,7 @@ import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { calculateRescueTime, cn } from "@/lib/utils";
 import axios from "axios";
 import {
     AlertTriangle,
@@ -66,9 +66,13 @@ type DataMode = "fake" | "real";
 
 const socket = new WebSocket("ws://localhost:8000/ws");
 
+const socketTwo = new WebSocket(
+    "wss://fitting-correctly-lioness.ngrok-free.app/ws_agent"
+);
+
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
-    const [center, setCenter] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
+    const [center] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [currentLocation, setCurrentLocation] = useState<{
@@ -91,6 +95,11 @@ export default function Page() {
     const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
     const [rescueRoute, setRescueRoute] = useState<google.maps.LatLng[]>([]);
     const [selectMode, setSelectMode] = useState(false);
+    const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
+    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
+    const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
+    const [rescueTime, setRescueTime] = useState<number | null>(null);
+    const [rescueAccuracy, setRescueAccuracy] = useState<number>(95); // Default accuracy
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -474,14 +483,8 @@ export default function Page() {
 
     const planHereRoute = useCallback(
         (map: any, router: any) => {
-            if (
-                map.current &&
-                router.current &&
-                currentLocation &&
-                selectedPersons.length > 0
-            ) {
-                console.log(selectedPersons);
-                const start = currentLocation;
+            if (map.current && router.current && selectedPersons.length > 0) {
+                const start = center; // Use center instead of currentLocation
                 const end = {
                     lat: selectedPersons[0]?.bbox[0],
                     lng: selectedPersons[0]?.bbox[1],
@@ -496,6 +499,7 @@ export default function Page() {
 
                 // Define avoid areas based on hazards
                 const avoidAreas = hazards
+                    .filter((h) => !avoidedHazards.includes(h.type))
                     .map((hazard) => {
                         const avoidAreaSize = 0.0005;
                         return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
@@ -539,6 +543,16 @@ export default function Page() {
                                 zoom: 16,
                             });
                         });
+
+                        // Calculate and set the rescue time
+                        const totalDistance = result.routes[0].sections.reduce(
+                            (acc: number, section: any) =>
+                                acc + section.summary.length,
+                            0
+                        );
+                        const estimatedTime =
+                            calculateRescueTime(totalDistance);
+                        setRescueTime(estimatedTime);
                     }
                 };
 
@@ -553,8 +567,152 @@ export default function Page() {
                 );
             }
         },
-        [currentLocation, selectedPersons, hazards]
+        [center, selectedPersons, hazards, avoidedHazards]
     );
+
+    const handleClickMe = () => {
+        socketTwo.send(
+            JSON.stringify({
+                event: "query",
+                message: "display just fire hazards",
+            })
+        );
+    };
+
+    useEffect(() => {
+        socketTwo.onopen = () => {
+            console.log("WebSocket connection established");
+
+            socketTwo.onmessage = (event) => {
+                console.log("Received message");
+                const message = JSON.parse(event.data);
+                console.log("message:", message);
+                const messageEvent = message.event;
+                const hazards = message.hazards;
+                console.log("event:", event);
+
+                if (messageEvent === "display_hazards") {
+                    setDisplayedHazards(hazards);
+                }
+
+                if (messageEvent === "plan_route") {
+                    setAvoidedHazards(hazards);
+                }
+
+                // if (data) {
+                //     console.log("Got data");
+
+                //     Object.keys(data).forEach((key) => {
+                //         if (resolvedIds?.includes(data[key].id)) {
+                //             data[key].severity = "RESOLVED";
+                //         }
+                //     });
+
+                //     setData(data);
+                // } else {
+                //     console.warn("Received unknown message");
+                // }
+            };
+
+            socketTwo.onclose = () => {
+                console.log("Closing websocket");
+            };
+        };
+    }, []);
+
+    // Load fake data
+    useEffect(() => {
+        if (dataMode === "fake") {
+            // Fake persons data with adjusted coordinates
+            const fakePersons: Person[] = [
+                {
+                    id: "person1",
+                    confidence: 0.95,
+                    bbox: [35.7806, -78.6392, 0, 0], // Slightly northwest of center
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    id: "person2",
+                    confidence: 0.88,
+                    bbox: [35.7786, -78.6372, 0, 0], // Slightly southeast of center
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    id: "person3",
+                    confidence: 0.92,
+                    bbox: [35.7801, -78.6362, 0, 0], // Slightly east of center
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+            ];
+            setPersons(fakePersons);
+
+            // Fake hazards data with adjusted coordinates
+            const fakeHazards: Hazard[] = [
+                {
+                    id: "hazard1",
+                    type: "warning",
+                    location: { lat: 35.7816, lng: -78.6402 }, // Northwest of center
+                    severity: "Moderate",
+                    details: "Potential structural damage detected",
+                    createdBy: "AI System",
+                    createdAt: new Date(),
+                },
+                {
+                    id: "hazard2",
+                    type: "fire",
+                    location: { lat: 35.7776, lng: -78.6362 }, // Southeast of center
+                    severity: "High",
+                    details: "Active fire detected in residential area",
+                    createdBy: "Thermal Sensor",
+                    createdAt: new Date(),
+                },
+            ];
+            setHazards(fakeHazards);
+
+            // Fake drones data with adjusted coordinates
+            const fakeDrones: Drone[] = [
+                {
+                    name: "Drone X123",
+                    isConnected: true,
+                    batteryLevel: 85,
+                    location: { lat: 35.7806, lng: -78.6372 }, // Northeast of center
+                    startingCoordinate: "35.7806, -78.6372",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    name: "Drone Y456",
+                    isConnected: true,
+                    batteryLevel: 72,
+                    location: { lat: 35.7786, lng: -78.6392 }, // Southwest of center
+                    startingCoordinate: "35.7786, -78.6392",
+                    timestamp: new Date().toISOString(),
+                },
+            ];
+            setDrones(fakeDrones);
+        } else {
+            // Clear fake data when in real mode
+            setPersons([]);
+            setHazards([]);
+            setDrones([]);
+        }
+    }, [dataMode]);
+
+    const handleFloatingHazardClick = (type: "warning" | "fire") => {
+        const hazard = hazards.find((h) => h.type === type);
+        if (hazard && mapInstance) {
+            handleHazardClick(hazard);
+            mapInstance.getViewModel().setLookAtData({
+                position: {
+                    lat: hazard.location.lat,
+                    lng: hazard.location.lng,
+                },
+                zoom: 16,
+            });
+        }
+    };
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
@@ -581,6 +739,8 @@ export default function Page() {
                         dataMode={dataMode}
                         socket={socket}
                     />
+
+                    <Button onClick={handleClickMe}>Click Me!</Button>
                 </div>
                 {/* <div
                     className={cn(
@@ -619,9 +779,11 @@ export default function Page() {
                                 detailId="foo" // ! FIX ME
                                 handleClose={handleCloseHumanPanel}
                             />
-                            <NearbyHazards />
+                            <RescueWorkflow
+                                rescueTime={persons.length * 8}
+                                accuracy={rescueAccuracy}
+                            />
                         </div>
-                        <RescueWorkflow />
                     </div>
                 ) : null}
 
@@ -773,32 +935,36 @@ export default function Page() {
                     center={center}
                     zoom={mapZoom}
                     setZoom={setMapZoom}
-                    currentLocation={
-                        true || isDronesDeployed ? currentLocation : null
-                    }
-                    persons={true || isDronesDeployed ? persons : []}
-                    hazards={true || isDronesDeployed ? hazards : []}
-                    drones={true || isDronesDeployed ? drones : []}
+                    persons={persons}
+                    hazards={hazards}
+                    drones={drones}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}
                     planHereRoute={planHereRoute}
+                    displayedHazards={displayedHazards}
+                    avoidedHazards={avoidedHazards}
+                    setMapInstance={setMapInstance}
                 />
             </div>
 
             {isDronesDeployed && (
                 <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                    {hazards.map((hazard, index) => (
+                    {["warning", "fire"].map((hazardType, index) => (
                         <button
                             key={index}
                             className={`rounded-full p-2 ${
-                                hazard.type === "warning"
+                                hazardType === "warning"
                                     ? "bg-yellow-500"
                                     : "bg-red-500"
                             } text-white`}
-                            onClick={() => handleHazardClick(hazard)}
+                            onClick={() =>
+                                handleFloatingHazardClick(
+                                    hazardType as "warning" | "fire"
+                                )
+                            }
                         >
-                            {hazard.type === "warning" ? (
+                            {hazardType === "warning" ? (
                                 <AlertTriangle size={24} />
                             ) : (
                                 <Flame size={24} />

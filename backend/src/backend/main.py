@@ -216,7 +216,15 @@ async def websocket_endpoint(websocket: WebSocket):
                     x, y, z, yaw = data.get("x", 0), data.get("y", 0), data.get("z", 0), data.get("yaw", 0)
                     await drone_agent.send(drone_agent.address, MoveCommand(x=x, y=y, z=z, yaw=yaw))
 
-                drone_data = drone_agent.storage.get("drone_data")
+                # Handle incoming messages from the drone agent
+                detection_data = await drone_agent.receive("detection")
+                if detection_data:
+                    await websocket.send_json({
+                        "event": "DETECTION",
+                        "data": detection_data
+                    })
+
+                drone_data = await drone_agent.receive("drone_metadata")
                 if isinstance(drone_data, DroneData):
                     # Insert data into SingleStore
                     with conn.cursor() as cursor:
@@ -235,6 +243,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     conn.commit()
 
                     await websocket.send_json({
+                        "event": "DRONE_DATA",
                         "detected_objects": [obj.dict() for obj in drone_data.detected_objects],
                         "frame": drone_data.frame,
                         "droneStatus": drone_data.drone_status.dict(),
@@ -411,3 +420,4 @@ if __name__ == "__main__":
     import uvicorn
     drone_agent.run()
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

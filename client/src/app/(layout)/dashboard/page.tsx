@@ -359,6 +359,7 @@ export default function Page() {
     const handleHazardClick = (hazard: Hazard) => {
         setSelectedHazard(hazard);
         setIsRightPanelOpen(true);
+        setShowHumanPanel(false);
         setFocusedItem("hazard");
         if (mapRef) {
             mapRef.panTo(hazard.location);
@@ -561,7 +562,6 @@ export default function Page() {
                         toggleDataMode={toggleDataMode}
                     /> */}
                 </div>
-
                 <div className="pointer-events-auto absolute left-4 top-16 z-20">
                     <DroneAssets
                         onDeployDrones={handleDeployDrones}
@@ -570,7 +570,6 @@ export default function Page() {
                         dataMode={dataMode}
                     />
                 </div>
-
                 <div
                     className={cn(
                         "absolute right-4 top-16",
@@ -579,7 +578,6 @@ export default function Page() {
                 >
                     <MapOverview />
                 </div>
-
                 {/* Left Sidebar */}
                 {/* <div
                     className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
@@ -602,7 +600,6 @@ export default function Page() {
                         handleDroneClick={handleDroneClick}
                     />
                 </div> */}
-
                 {showHumanPanel ? (
                     <div className="absolute right-4 top-16 flex flex-row space-x-2">
                         <div className="space-y-2">
@@ -615,13 +612,13 @@ export default function Page() {
 
                 {/* Right Sidebar */}
                 <div
-                    className={`pointer-events-auto absolute bottom-0 right-0 top-12 flex w-80 flex-col bg-white shadow-lg transition-all duration-300 ease-in-out ${
+                    className={`pointer-events-auto absolute right-4 top-16 flex w-80 flex-col rounded-sm border-2 border-gray-400 bg-white shadow-lg transition-all duration-300 ease-in-out ${
                         isRightPanelOpen ? "translate-x-0" : "translate-x-full"
                     }`}
                 >
                     {selectedHazard && (
-                        <div className="flex h-full flex-col p-4">
-                            <div className="mb-4 flex items-center justify-between">
+                        <div className="flex h-fit flex-col rounded-sm bg-white p-4">
+                            <div className="mb-4 flex h-fit items-center justify-between bg-white">
                                 <h2 className="text-xl font-bold">
                                     {selectedHazard.type === "warning" ? (
                                         <AlertTriangle
@@ -741,7 +738,10 @@ export default function Page() {
                     {/* Toggle button for right panel */}
                     <button
                         className={`absolute -left-10 top-1/2 z-10 -translate-y-1/2 rounded-l-md bg-white p-2 shadow-md transition-all duration-300 hover:bg-gray-100`}
-                        onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+                        onClick={() => {
+                            setIsRightPanelOpen(!isRightPanelOpen);
+                            setShowHumanPanel(false);
+                        }}
                     >
                         {isRightPanelOpen ? (
                             <ChevronRight size={24} />
@@ -750,29 +750,6 @@ export default function Page() {
                         )}
                     </button>
                 </div>
-
-                {/* Floating Hazard Panel */}
-                {isDronesDeployed && (
-                    <div className="pointer-events-auto absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                        {hazards.map((hazard, index) => (
-                            <button
-                                key={index}
-                                className={`rounded-full p-2 ${
-                                    hazard.type === "warning"
-                                        ? "bg-yellow-500"
-                                        : "bg-red-500"
-                                } text-white`}
-                                onClick={() => handleHazardClick(hazard)}
-                            >
-                                {hazard.type === "warning" ? (
-                                    <AlertTriangle size={24} />
-                                ) : (
-                                    <Flame size={24} />
-                                )}
-                            </button>
-                        ))}
-                    </div>
-                )}
             </div>
 
             <div className="absolute inset-0 z-0">
@@ -793,6 +770,28 @@ export default function Page() {
                     selectedPersons={selectedPersons}
                 />
             </div>
+
+            {isDronesDeployed && (
+                <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
+                    {hazards.map((hazard, index) => (
+                        <button
+                            key={index}
+                            className={`rounded-full p-2 ${
+                                hazard.type === "warning"
+                                    ? "bg-yellow-500"
+                                    : "bg-red-500"
+                            } text-white`}
+                            onClick={() => handleHazardClick(hazard)}
+                        >
+                            {hazard.type === "warning" ? (
+                                <AlertTriangle size={24} />
+                            ) : (
+                                <Flame size={24} />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

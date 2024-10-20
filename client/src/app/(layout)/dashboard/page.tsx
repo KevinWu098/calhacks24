@@ -792,6 +792,21 @@ export default function Page() {
                     ))}
                 </div>
             )}
+
+            {/* Add this block for the DetectedPersons panel */}
+            {isDronesDeployed && (
+                <div className="pointer-events-auto absolute bottom-4 left-4 z-10 w-80 rounded-lg bg-white shadow-lg">
+                    <DetectedPersons
+                        persons={persons}
+                        handlePersonClick={handlePersonClick}
+                        selectedPersons={selectedPersons}
+                        handlePersonSelection={handlePersonSelection}
+                        planRescueRoute={planRescueRoute}
+                        selectMode={selectMode}
+                        toggleSelectMode={toggleSelectMode}
+                    />
+                </div>
+            )}
         </div>
     );
 }

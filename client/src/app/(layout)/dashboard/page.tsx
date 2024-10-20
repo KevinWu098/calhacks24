@@ -73,6 +73,8 @@ const socketTwo = new WebSocket(
     "wss://fitting-correctly-lioness.ngrok-free.app/ws_agent"
 );
 
+let agentMessage: string = "";
+
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
     const [center] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
@@ -87,10 +89,9 @@ export default function Page() {
     const [drones, setDrones] = useState<Drone[]>([]);
     const [hazards, setHazards] = useState<Hazard[]>([]);
     const [selectedHazard, setSelectedHazard] = useState<Hazard | null>(null);
-    const [_focusedItem, setFocusedItem] = useState<
+    const [focusedItem, setFocusedItem] = useState<
         "drone" | "hazard" | "person" | null
     >(null);
-    const [mapRef, setMapRef] = useState<google.maps.Map | null>(null);
     const [isDronesDeployed, setIsDronesDeployed] = useState(false);
     const [mapZoom, setMapZoom] = useState(11); // Start with a more zoomed out view
     const [isLeftPanelVisible, setIsLeftPanelVisible] = useState(false);
@@ -331,33 +332,22 @@ export default function Page() {
         setIsRightPanelOpen(true);
         setShowHumanPanel(false);
         setFocusedItem("hazard");
-        if (mapRef) {
-            mapRef.panTo(hazard.location);
-            smoothZoom(mapRef, 16, mapRef.getZoom() as number);
-        }
     };
 
     const handlePersonSelection = useCallback(
         (person: Person, multiSelect: boolean) => {
-            console.log(
-                "Selecting person:",
-                person.id,
-                "Multi-select:",
-                multiSelect
-            );
             setSelectedPersons((prev) => {
                 const isSelected = prev.some((p) => p.id === person.id);
-                console.log("Is already selected:", isSelected);
                 if (isSelected) {
                     return prev.filter((p) => p.id !== person.id);
                 } else {
                     const newSelection = multiSelect
                         ? [...prev, person]
                         : [person];
-                    console.log(
-                        "New selection:",
-                        newSelection.map((p) => p.id)
-                    );
+
+                    console.log("yupppe");
+
+                    planHereRouteSelection(map, router, newSelection); // ! HERE
                     return newSelection;
                 }
             });
@@ -365,41 +355,24 @@ export default function Page() {
         []
     );
 
-    const handlePersonClick = useCallback(
-        (person: Person) => {
-            if (selectMode) {
-                handlePersonSelection(person, false);
-            } else {
-                setFocusedItem("person");
-                setIsRightPanelOpen(false);
-                setShowHumanPanel(true);
-                setSelectedHazard(null);
-                // if (mapRef) {
-                //     const targetLatLng = new google.maps.LatLng(
-                //         person.bbox[0],
-                //         person.bbox[1] + 0.005 // slight offset for panel
-                //     );
-                //     mapRef.panTo(targetLatLng);
-                //     smoothZoom(mapRef, 16, mapRef.getZoom() as number);
-                // }
-            }
-        },
-        [selectMode, handlePersonSelection]
-    );
+    const handlePersonClick = (person: Person) => {
+        if (selectMode) {
+            console.log("select mode");
+            handlePersonSelection(person, false);
+        } else {
+            setFocusedItem("person");
+            setIsRightPanelOpen(false);
+            setShowHumanPanel(true);
+            setSelectedHazard(null);
+        }
+    };
 
     const handleDroneClick = (droneName: string) => {
         setIsRightPanelOpen(true);
         setSelectedHazard(null);
+        setShowHumanPanel(false);
+        handleCloseHumanPanel();
         setFocusedItem("drone");
-        const clickedDrone = drones.find((drone) => drone.name === droneName);
-        if (mapRef && clickedDrone && "location" in clickedDrone) {
-            mapRef.panTo(clickedDrone.location);
-            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
-        }
-    };
-
-    const onMapLoad = (map: google.maps.Map) => {
-        setMapRef(map);
     };
 
     const getBatteryIcon = (level: number) => {
@@ -409,42 +382,6 @@ export default function Page() {
         return <BatteryWarning />;
     };
 
-    const handleDeployDrones = useCallback(() => {
-        setIsDronesDeployed(true);
-        setIsLeftPanelVisible(true);
-
-        if (mapRef && currentLocation) {
-            mapRef.panTo(currentLocation);
-            smoothZoom(mapRef, 15, mapRef.getZoom() as number);
-        }
-
-        // Generate all data here
-        const newCenter = currentLocation || center;
-        const newData = generateSimulationData(newCenter);
-
-        setHazards(newData.hazards);
-        setPersons(newData.persons);
-        setDrones(newData.drones);
-
-        if (dataMode === "real") {
-            socket.send(
-                JSON.stringify({
-                    event: "DEPLOY",
-                })
-            );
-        }
-    }, [currentLocation, dataMode, mapRef, center, socket]);
-
-    useEffect(() => {
-        const newCenter = currentLocation || center;
-        const newData = generateSimulationData(newCenter);
-
-        setHazards(newData.hazards);
-        setPersons(newData.persons);
-        setDrones(newData.drones);
-    }, []);
-
-    // Add this new function to generate simulation data
     const generateSimulationData = (center: { lat: number; lng: number }) => {
         const hazardOffset1 = { lat: 0.005, lng: 0.007 };
         const hazardOffset2 = { lat: -0.003, lng: -0.006 };
@@ -587,6 +524,36 @@ export default function Page() {
         return { hazards, persons, drones };
     };
 
+    const handleDeployDrones = useCallback(() => {
+        setIsDronesDeployed(true);
+        setIsLeftPanelVisible(true);
+
+        // Generate all data here
+        const newCenter = currentLocation || center;
+        const newData = generateSimulationData(newCenter);
+
+        setHazards(newData.hazards);
+        setPersons(newData.persons);
+        setDrones(newData.drones);
+
+        if (dataMode === "real") {
+            socket.send(
+                JSON.stringify({
+                    event: "DEPLOY",
+                })
+            );
+        }
+    }, [currentLocation, dataMode, center, socket]);
+
+    useEffect(() => {
+        const newCenter = currentLocation || center;
+        const newData = generateSimulationData(newCenter);
+
+        setHazards(newData.hazards);
+        setPersons(newData.persons);
+        setDrones(newData.drones);
+    }, []);
+
     const getSeverityColor = (severity: Hazard["severity"]) => {
         switch (severity) {
             case "Low":
@@ -647,6 +614,7 @@ export default function Page() {
                     message: input,
                 })
             );
+            agentMessage = "";
             console.log("Query sent:", input);
             setQuery("");
         }
@@ -660,7 +628,7 @@ export default function Page() {
     );
 
     const { toast } = useToast();
-    const [agentMessage, setAgentMessage] = useState("");
+    // const [agentMessage, setAgentMessage] = useState("");
     useEffect(() => {
         socketTwo.onopen = () => {
             console.log("WebSocket connection established");
@@ -685,8 +653,7 @@ export default function Page() {
                 }
 
                 if (messageEvent === "chat_chunk") {
-                    console.log(agentMessage);
-                    setAgentMessage((prev) => (prev += message.content));
+                    agentMessage += message.content;
                 }
 
                 if (messageEvent === "AGENT_RESPONSE_COMPLETE") {
@@ -697,7 +664,7 @@ export default function Page() {
                         className: "w-[500px] z-50 mr-16",
                         duration: 8000,
                     });
-                    setAgentMessage("");
+                    agentMessage = "";
                     setLoading(false);
                 }
             };
@@ -708,99 +675,193 @@ export default function Page() {
         };
     }, []);
 
-    const planHereRoute = useCallback(
-        (map: any, router: any) => {
-            if (map.current && router.current) {
-                const start = center; // Use center instead of currentLocation
+    const planHereRoute = (map: any, router: any) => {
+        if (map.current && router.current) {
+            const start = center;
+            let endPerson: Person | undefined = undefined;
 
-                const endPerson = persons.find((p) => p.id === destination);
+            endPerson = persons.find((p) => p.id === destination);
 
-                console.log("endPErson", endPerson);
+            if (!endPerson) {
+                return;
+            }
 
-                const end = {
-                    lat: endPerson?.bbox[0],
-                    lng: endPerson?.bbox[1],
-                };
+            const end = {
+                lat: endPerson.bbox[0],
+                lng: endPerson.bbox[1],
+            };
 
-                const waypoint = selectedPersons.at(1)
-                    ? {
-                        lat: selectedPersons[1]?.bbox[0],
-                        lng: selectedPersons[1]?.bbox[1],
-                    }
-                    : null;
+            const waypoints = selectedPersons
+                .slice(1)
+                .map((person) => `${person.bbox[0]},${person.bbox[1]}`)
+                .join("|");
 
-                // Define avoid areas based on hazards
-                const avoidAreas = hazards
-                    .filter((h) => !avoidedHazards.includes(h.type))
-                    .map((hazard) => {
-                        const avoidAreaSize = 0.0005;
-                        return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
-                    })
-                    .join("|");
+            const avoidAreas = hazards
+                .filter((h) => !avoidedHazards.includes(h.type))
+                .map((hazard) => {
+                    const avoidAreaSize = 0.0005;
+                    return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
+                })
+                .join("|");
 
-                const routingParameters = {
-                    routingMode: "fast",
-                    transportMode: "pedestrian",
-                    origin: `${start.lat},${start.lng}`,
-                    destination: `${end.lat},${end.lng}`,
-                    return: "polyline",
-                    ...(waypoint && { via: `${waypoint.lat},${waypoint.lng}` }),
-                    ...(avoidAreas && { "avoid[areas]": avoidAreas }),
-                };
+            const routingParameters = {
+                routingMode: "fast",
+                transportMode: "pedestrian",
+                origin: `${start.lat},${start.lng}`,
+                destination: `${end.lat},${end.lng}`,
+                return: "polyline",
+                ...(waypoints && { via: waypoints }),
+                ...(avoidAreas && { "avoid[areas]": avoidAreas }),
+            };
 
-                const onResult = (result: any) => {
-                    if (result.routes && result.routes.length > 0) {
-                        const currentObjects = map.current?.getObjects();
-                        if (currentObjects) {
-                            currentObjects.forEach((object: any) => {
-                                if (object instanceof H.map.Polyline) {
-                                    map.current?.removeObject(object);
-                                }
-                            });
-                        }
-
-                        const route = result.routes[0];
-                        route.sections.forEach((section: any) => {
-                            const linestring =
-                                H.geo.LineString.fromFlexiblePolyline(
-                                    section.polyline
-                                );
-                            const routeLine = new H.map.Polyline(linestring, {
-                                style: { strokeColor: "blue", lineWidth: 4 },
-                                data: {},
-                            });
-                            map.current?.addObject(routeLine);
-                            map.current?.getViewModel().setLookAtData({
-                                bounds: routeLine.getBoundingBox()!,
-                                zoom: 16,
-                            });
+            const onResult = (result: any) => {
+                if (result.routes && result.routes.length > 0) {
+                    const currentObjects = map.current?.getObjects();
+                    if (currentObjects) {
+                        currentObjects.forEach((object: any) => {
+                            if (object instanceof H.map.Polyline) {
+                                map.current?.removeObject(object);
+                            }
                         });
-
-                        // Calculate and set the rescue time
-                        const totalDistance = result.routes[0].sections.reduce(
-                            (acc: number, section: any) =>
-                                acc + section.summary.length,
-                            0
-                        );
-                        const estimatedTime =
-                            calculateRescueTime(totalDistance);
-                        setRescueTime(estimatedTime);
                     }
-                };
 
-                const onError = (error: unknown) => {
-                    console.error("Error calculating route:", error);
-                };
+                    const route = result.routes[0];
+                    route.sections.forEach((section: any) => {
+                        const linestring =
+                            H.geo.LineString.fromFlexiblePolyline(
+                                section.polyline
+                            );
+                        const routeLine = new H.map.Polyline(linestring, {
+                            style: { strokeColor: "blue", lineWidth: 4 },
+                            data: {},
+                        });
+                        map.current?.addObject(routeLine);
+                        map.current?.getViewModel().setLookAtData({
+                            bounds: routeLine.getBoundingBox()!,
+                            zoom: 16,
+                        });
+                    });
 
-                router.current.calculateRoute(
-                    routingParameters,
-                    onResult,
-                    onError
+                    // Calculate and set the rescue time
+                    const totalDistance = result.routes[0].sections.reduce(
+                        (acc: number, section: any) =>
+                            acc + section.summary.length,
+                        0
+                    );
+                    const estimatedTime = calculateRescueTime(totalDistance);
+                    setRescueTime(estimatedTime);
+                }
+            };
+
+            const onError = (error: unknown) => {
+                console.error("Error calculating route:", error);
+            };
+
+            router.current.calculateRoute(routingParameters, onResult, onError);
+        }
+    };
+
+    const planHereRouteSelection = (
+        map: any,
+        router: any,
+        newSelection: Person[]
+    ) => {
+        if (map.current && router.current) {
+            const start = center;
+            let endPerson: Person | undefined = undefined;
+
+            console.log("in orute seleection,", newSelection);
+
+            if (persons.length > 0) {
+                endPerson = persons.find(
+                    (p) => p.id === newSelection.at(0)?.id
+                );
+            } else {
+                endPerson = generateSimulationData(center).persons.find(
+                    (p) => p.id === newSelection.at(0)?.id
                 );
             }
-        },
-        [center, selectedPersons, hazards, avoidedHazards]
-    );
+
+            console.log(endPerson);
+
+            if (!endPerson) {
+                return;
+            }
+
+            const end = {
+                lat: endPerson.bbox[0],
+                lng: endPerson.bbox[1],
+            };
+
+            const waypoints = newSelection
+                .slice(1)
+                .map((person) => `${person.bbox[0]},${person.bbox[1]}`)
+                .join("|");
+
+            const avoidAreas = hazards
+                .filter((h) => !avoidedHazards.includes(h.type))
+                .map((hazard) => {
+                    const avoidAreaSize = 0.0005;
+                    return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
+                })
+                .join("|");
+
+            const routingParameters = {
+                routingMode: "fast",
+                transportMode: "pedestrian",
+                origin: `${start.lat},${start.lng}`,
+                destination: `${end.lat},${end.lng}`,
+                return: "polyline",
+                ...(waypoints && { via: waypoints }),
+                ...(avoidAreas && { "avoid[areas]": avoidAreas }),
+            };
+
+            const onResult = (result: any) => {
+                if (result.routes && result.routes.length > 0) {
+                    const currentObjects = map.current?.getObjects();
+                    if (currentObjects) {
+                        currentObjects.forEach((object: any) => {
+                            if (object instanceof H.map.Polyline) {
+                                map.current?.removeObject(object);
+                            }
+                        });
+                    }
+
+                    const route = result.routes[0];
+                    route.sections.forEach((section: any) => {
+                        const linestring =
+                            H.geo.LineString.fromFlexiblePolyline(
+                                section.polyline
+                            );
+                        const routeLine = new H.map.Polyline(linestring, {
+                            style: { strokeColor: "blue", lineWidth: 4 },
+                            data: {},
+                        });
+                        map.current?.addObject(routeLine);
+                        map.current?.getViewModel().setLookAtData({
+                            bounds: routeLine.getBoundingBox()!,
+                            zoom: 16,
+                        });
+                    });
+
+                    // Calculate and set the rescue time
+                    const totalDistance = result.routes[0].sections.reduce(
+                        (acc: number, section: any) =>
+                            acc + section.summary.length,
+                        0
+                    );
+                    const estimatedTime = calculateRescueTime(totalDistance);
+                    setRescueTime(estimatedTime);
+                }
+            };
+
+            const onError = (error: unknown) => {
+                console.error("Error calculating route:", error);
+            };
+
+            router.current.calculateRoute(routingParameters, onResult, onError);
+        }
+    };
 
     // Load fake data
     // useEffect(() => {
@@ -912,6 +973,59 @@ export default function Page() {
             });
         }
     };
+
+    const mapRef = useRef<HTMLDivElement | null>(null);
+    const map = useRef<H.Map | null>(null);
+    const platform = useRef<H.service.Platform | null>(null);
+    const behavior = useRef<H.mapevents.Behavior | null>(null);
+    const ui = useRef<H.ui.UI | null>(null);
+    const router = useRef<H.service.RoutingService | null>(null);
+
+    useEffect(() => {
+        if (!map.current && mapRef.current) {
+            platform.current = new H.service.Platform({
+                apikey: process.env.NEXT_PUBLIC_HERE_KEY as string,
+            });
+
+            const defaultLayers: any = platform.current.createDefaultLayers();
+
+            // Create a new map instance
+            map.current = new H.Map(
+                mapRef.current,
+                defaultLayers.vector.normal.map, // Use vector map layer
+                {
+                    zoom: 14, // Adjust initial zoom level
+                    center: center, // Use the provided center
+                }
+            );
+
+            setMapInstance(map.current); // Set the map instance
+
+            // Enable map interactions
+            behavior.current = new H.mapevents.Behavior(
+                new H.mapevents.MapEvents(map.current)
+            );
+
+            H.ui.UI.createDefault(map.current, defaultLayers);
+
+            router.current = platform.current.getRoutingService(undefined, 8);
+
+            map.current.addEventListener("mapviewchangeend", () => {
+                setMapZoom(map.current!.getZoom());
+            });
+        }
+
+        return () => {
+            if (map.current) {
+                map.current.dispose();
+                map.current = null;
+            }
+        };
+    }, [setMapZoom, center, setMapInstance]);
+
+    useEffect(() => {
+        planHereRoute(map, router);
+    }, [selectedPersons, planHereRoute, map, router]);
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
@@ -1145,6 +1259,9 @@ export default function Page() {
                     showDrones={showDrones}
                     showPeople={showPeople}
                     destinationId={destination}
+                    map={map}
+                    mapRef={mapRef}
+                    router={router}
                 />
             </div>
 

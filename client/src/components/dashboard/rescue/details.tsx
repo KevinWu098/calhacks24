@@ -12,7 +12,7 @@ interface DetailsProps {
     person?: Person;
 }
 
-export function Details({ detailId, handleClose }: DetailsProps) {
+export function Details({ detailId, handleClose, person }: DetailsProps) {
     return (
         <div className="max-w-[500px] space-y-2 rounded-sm border-2 border-gray-400 bg-white p-3">
             <div className="space-y-1">
@@ -47,7 +47,7 @@ export function Details({ detailId, handleClose }: DetailsProps) {
                 <div className="flex-between">
                     <div>
                         <p className="text-xl font-semibold">Trapped Person</p>
-                        <p className="text-gray-500">ID: HUM423</p>
+                        <p className="text-gray-500">ID: {person?.id}</p>
                     </div>
 
                     <div className="mb-auto flex h-5 w-fit items-center rounded-sm bg-[#FFCECE] p-3 text-sm font-medium text-[#BF0000]">
@@ -61,7 +61,8 @@ export function Details({ detailId, handleClose }: DetailsProps) {
                             Location
                         </p>
                         <p className="line-clamp-1 text-ellipsis text-lg font-semibold leading-none">
-                            35.7796° N, 78.6382° W
+                            {person?.bbox[0].toFixed(4)}° N,{" "}
+                            {person?.bbox[1].toFixed(4)}° W
                         </p>
                     </div>
                     <div className="space-y-1">

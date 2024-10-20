@@ -18,6 +18,7 @@ interface MapProps {
     handleDroneClick: (droneName: string) => void;
     displayedHazards: string[];
     avoidedHazards: string[];
+    setMapInstance: (map: H.Map) => void;
 }
 
 export const HereMap = ({
@@ -34,6 +35,7 @@ export const HereMap = ({
     handleDroneClick,
     displayedHazards,
     avoidedHazards,
+    setMapInstance,
 }: MapProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const map = useRef<H.Map | null>(null);
@@ -60,6 +62,8 @@ export const HereMap = ({
                 }
             );
 
+            setMapInstance(map.current); // Set the map instance
+
             // Enable map interactions
             behavior.current = new H.mapevents.Behavior(
                 new H.mapevents.MapEvents(map.current)
@@ -80,7 +84,7 @@ export const HereMap = ({
                 map.current = null;
             }
         };
-    }, [apikey, setZoom, _center]);
+    }, [apikey, setZoom, _center, setMapInstance]);
 
     // Pan to center when it changes
     useEffect(() => {

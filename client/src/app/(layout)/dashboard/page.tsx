@@ -97,6 +97,7 @@ export default function Page() {
     const [selectMode, setSelectMode] = useState(false);
     const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
     const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
+    const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -687,6 +688,20 @@ export default function Page() {
         }
     }, [dataMode]);
 
+    const handleFloatingHazardClick = (type: "warning" | "fire") => {
+        const hazard = hazards.find((h) => h.type === type);
+        if (hazard && mapInstance) {
+            handleHazardClick(hazard);
+            mapInstance.getViewModel().setLookAtData({
+                position: {
+                    lat: hazard.location.lat,
+                    lng: hazard.location.lng,
+                },
+                zoom: 16,
+            });
+        }
+    };
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
             {/* Overlay container for all UI elements */}
@@ -915,22 +930,27 @@ export default function Page() {
                     planHereRoute={planHereRoute}
                     displayedHazards={displayedHazards}
                     avoidedHazards={avoidedHazards}
+                    setMapInstance={setMapInstance}
                 />
             </div>
 
             {isDronesDeployed && (
                 <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                    {hazards.map((hazard, index) => (
+                    {["warning", "fire"].map((hazardType, index) => (
                         <button
                             key={index}
                             className={`rounded-full p-2 ${
-                                hazard.type === "warning"
+                                hazardType === "warning"
                                     ? "bg-yellow-500"
                                     : "bg-red-500"
                             } text-white`}
-                            onClick={() => handleHazardClick(hazard)}
+                            onClick={() =>
+                                handleFloatingHazardClick(
+                                    hazardType as "warning" | "fire"
+                                )
+                            }
                         >
-                            {hazard.type === "warning" ? (
+                            {hazardType === "warning" ? (
                                 <AlertTriangle size={24} />
                             ) : (
                                 <Flame size={24} />

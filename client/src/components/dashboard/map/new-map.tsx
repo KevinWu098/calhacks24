@@ -21,6 +21,7 @@ interface MapProps {
     setMapInstance: (map: H.Map) => void;
     showDrones: boolean;
     showPeople: boolean;
+    destinationId: string | undefined;
 }
 
 export const HereMap = ({
@@ -40,6 +41,7 @@ export const HereMap = ({
     setMapInstance,
     showPeople,
     showDrones,
+    destinationId,
 }: MapProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const map = useRef<H.Map | null>(null);
@@ -100,9 +102,10 @@ export const HereMap = ({
 
     useEffect(() => {
         if (map.current) {
+            console.log("in useeffect");
             planHereRoute(map, router);
         }
-    }, [planHereRoute]);
+    }, [planHereRoute, destinationId, avoidedHazards]);
 
     useEffect(() => {
         if (map.current) {

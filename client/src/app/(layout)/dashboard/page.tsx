@@ -272,14 +272,14 @@ export default function Page() {
                 // Set persons with adjusted offsets
                 const newPersons: Person[] = [
                     {
-                        id: crypto.randomUUID(),
+                        id: "person1",
                         confidence: 0.95,
                         bbox: [center.lat + 0.002, center.lng - 0.012, 0, 0],
                         image: "",
                         timestamp: new Date().toISOString(),
                     },
                     {
-                        id: crypto.randomUUID(),
+                        id: "person2",
                         confidence: 0.95,
                         bbox: [center.lat - 0.005, center.lng + 0.0026, 0, 0],
                         image: "",
@@ -485,6 +485,7 @@ export default function Page() {
     const [showPeople, setShowPeople] = useState<boolean>(true);
     const [showDrones, setShowDrones] = useState<boolean>(true);
     const [query, setQuery] = useState("");
+    const [destination, setDestination] = useState();
 
     const handleQuery = (input: string) => {
         if (input.trim() !== "") {
@@ -526,6 +527,9 @@ export default function Page() {
 
                 if (messageEvent === "plan_route") {
                     setAvoidedHazards(hazards);
+                    setDestination(message.id);
+
+                    console.log("hit", message.id, hazards);
                 }
 
                 // if (data) {
@@ -551,11 +555,16 @@ export default function Page() {
 
     const planHereRoute = useCallback(
         (map: any, router: any) => {
-            if (map.current && router.current && selectedPersons.length > 0) {
+            if (map.current && router.current) {
                 const start = center; // Use center instead of currentLocation
+
+                const endPerson = persons.find((p) => p.id === destination);
+
+                console.log("endPErson", endPerson);
+
                 const end = {
-                    lat: selectedPersons[0]?.bbox[0],
-                    lng: selectedPersons[0]?.bbox[1],
+                    lat: endPerson?.bbox[0],
+                    lng: endPerson?.bbox[1],
                 };
 
                 const waypoint = selectedPersons.at(1)
@@ -963,6 +972,7 @@ export default function Page() {
                     setMapInstance={setMapInstance}
                     showDrones={showDrones}
                     showPeople={showPeople}
+                    destinationId={destination}
                 />
             </div>
 

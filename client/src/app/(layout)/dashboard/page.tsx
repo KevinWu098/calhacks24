@@ -7,6 +7,7 @@ import { DetectedPersons } from "@/components/dashboard/DetectedPersons";
 import { DroneAssets } from "@/components/dashboard/drone-assets";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
+import { HereMap } from "@/components/dashboard/map/new-map";
 import { Nav } from "@/components/dashboard/nav";
 import { Details } from "@/components/dashboard/rescue/details";
 import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
@@ -560,16 +561,17 @@ export default function Page() {
                         isDronesDeployed={isDronesDeployed}
                         drones={drones}
                         dataMode={dataMode}
+                        socket={socket}
                     />
                 </div>
-                <div
+                {/* <div
                     className={cn(
                         "absolute right-4 top-16",
                         isDronesDeployed && "translate-x-[120%] transition-all"
                     )}
                 >
                     <MapOverview />
-                </div>
+                </div> */}
                 {/* Left Sidebar */}
                 {/* <div
                     className={`pointer-events-auto absolute bottom-0 left-0 top-12 z-10 w-80 overflow-auto bg-white shadow-lg transition-all duration-500 ease-in-out ${
@@ -748,14 +750,17 @@ export default function Page() {
             </div>
 
             <div className="absolute inset-0 z-0">
-                <Map
+                <HereMap
+                    apikey={process.env.NEXT_PUBLIC_HERE_KEY as string}
                     center={center}
                     zoom={mapZoom}
                     setZoom={setMapZoom}
-                    currentLocation={isDronesDeployed ? currentLocation : null}
-                    persons={isDronesDeployed ? persons : []}
-                    hazards={isDronesDeployed ? hazards : []}
-                    drones={isDronesDeployed ? drones : []}
+                    currentLocation={
+                        true || isDronesDeployed ? currentLocation : null
+                    }
+                    persons={true || isDronesDeployed ? persons : []}
+                    hazards={true || isDronesDeployed ? hazards : []}
+                    drones={true || isDronesDeployed ? drones : []}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}

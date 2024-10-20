@@ -1,0 +1,266 @@
+"use client";
+
+import React, { useCallback, useEffect, useRef } from "react";
+import H from "@here/maps-api-for-javascript";
+import { FlameIcon } from "lucide-react";
+
+interface Hazard {
+    id: string;
+    location: { lat: number; lng: number };
+    type: string;
+}
+
+interface Person {
+    id: string;
+    bbox: [number, number];
+}
+
+interface MapProps {
+    apikey: string;
+    center: { lat: number; lng: number };
+    zoom: number;
+    setZoom: (zoom: number) => void;
+    currentLocation: { lat: number; lng: number } | null;
+    persons: Person[];
+    hazards: Hazard[];
+    drones: { name: string; location: { lat: number; lng: number } }[];
+    handlePersonClick: (person: Person) => void;
+    handleHazardClick: (hazard: Hazard) => void;
+    handleDroneClick: (droneName: string) => void;
+    onMapLoad: (map: H.Map) => void;
+    rescueRoute: { lat: number; lng: number }[];
+    selectMode: boolean;
+    selectedPersons: Person[];
+}
+
+export const HereMap = ({
+    apikey,
+    center,
+    zoom,
+    setZoom,
+    currentLocation,
+    persons,
+    hazards,
+    drones,
+    handlePersonClick,
+    handleHazardClick,
+    handleDroneClick,
+    onMapLoad,
+    rescueRoute,
+    selectMode,
+    selectedPersons,
+}: MapProps) => {
+    const mapRef = useRef<HTMLDivElement | null>(null);
+    const map = useRef<H.Map | null>(null);
+    const platform = useRef<H.service.Platform | null>(null);
+    const behavior = useRef<H.mapevents.Behavior | null>(null);
+    const ui = useRef<H.ui.UI | null>(null);
+    const router = useRef<H.service.RoutingService | null>(null);
+
+    useEffect(() => {
+        if (!map.current && mapRef.current) {
+            platform.current = new H.service.Platform({
+                apikey: apikey,
+            });
+
+            const defaultLayers = platform.current.createDefaultLayers();
+
+            // Create a new map instance
+            map.current = new H.Map(
+                mapRef.current,
+                defaultLayers.vector.normal.map, // Use vector map layer
+                {
+                    zoom: 15,
+                    center: {
+                        lat: 37.776, // Center the map between the two markers
+                        lng: -122.391,
+                    },
+                }
+            );
+
+            // Enable map interactions
+            behavior.current = new H.mapevents.Behavior(
+                new H.mapevents.MapEvents(map.current)
+            );
+
+            H.ui.UI.createDefault(map.current, defaultLayers);
+
+            router.current = platform.current.getRoutingService(undefined, 8);
+
+            map.current.addEventListener("mapviewchangeend", () => {
+                setZoom(map.current!.getZoom());
+            });
+        }
+
+        return () => {
+            if (map.current) {
+                map.current.dispose();
+                map.current = null;
+            }
+        };
+    }, []);
+
+    // Pan to current location when it changes
+    useEffect(() => {
+        if (currentLocation && map.current) {
+            map.current.setCenter(currentLocation);
+            map.current.setZoom(15);
+        }
+    }, [currentLocation]);
+
+    // Define planHereRoute inside HereMap
+    const planHereRoute = useCallback(() => {
+        if (
+            map.current &&
+            router.current &&
+            currentLocation &&
+            selectedPersons.length > 0
+        ) {
+            const start = currentLocation;
+            const end = {
+                lat: selectedPersons[0]?.bbox[0],
+                lng: selectedPersons[0]?.bbox[1],
+            };
+
+            // Define avoid areas based on hazards
+            const avoidAreas = hazards
+                .map((hazard) => {
+                    const avoidAreaSize = 0.0005;
+                    return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
+                })
+                .join("|");
+
+            const routingParameters = {
+                routingMode: "fast",
+                transportMode: "pedestrian",
+                origin: `${start.lat},${start.lng}`,
+                destination: `${end.lat},${end.lng}`,
+                return: "polyline",
+                ...(avoidAreas && { "avoid[areas]": avoidAreas }),
+            };
+
+            const onResult = (result) => {
+                if (result.routes && result.routes.length > 0) {
+                    const route = result.routes[0];
+                    route.sections.forEach((section) => {
+                        const linestring =
+                            H.geo.LineString.fromFlexiblePolyline(
+                                section.polyline
+                            );
+                        const routeLine = new H.map.Polyline(linestring, {
+                            style: { strokeColor: "blue", lineWidth: 4 },
+                            data: {},
+                        });
+                        map.current.addObject(routeLine);
+                        map.current.getViewModel().setLookAtData({
+                            bounds: routeLine.getBoundingBox(),
+                        });
+                    });
+                }
+            };
+
+            const onError = (error) => {
+                console.error("Error calculating route:", error);
+            };
+
+            router.current.calculateRoute(routingParameters, onResult, onError);
+        }
+    }, [currentLocation, selectedPersons, hazards]);
+
+    useEffect(() => {
+        if (map.current) {
+            planHereRoute();
+        }
+    }, [planHereRoute]);
+
+    useEffect(() => {
+        if (map.current) {
+            map.current.getObjects().forEach((obj) => {
+                if (obj.getData && obj.getData() === "marker") {
+                    map.current!.removeObject(obj);
+                }
+            });
+
+            if (currentLocation) {
+                const currentLocationMarker = new H.map.Marker(currentLocation);
+
+                currentLocationMarker.setData("marker");
+                currentLocationMarker.addEventListener("tap", () => {
+                    handleDroneClick("You");
+                });
+
+                map.current.addObject(currentLocationMarker);
+            }
+
+            persons.forEach((person) => {
+                const icon = new H.map.Icon("/location-man.svg", {
+                    size: { w: 32, h: 32 },
+                });
+
+                const personMarker = new H.map.Marker(
+                    { lat: person.bbox[0], lng: person.bbox[1] },
+                    {
+                        icon: icon,
+                        data: {},
+                    }
+                );
+                personMarker.setData("marker");
+                personMarker.addEventListener("tap", () => {
+                    handlePersonClick(person);
+                });
+
+                map.current!.addObject(personMarker);
+            });
+
+            // Add hazard markers
+            hazards.forEach((hazard) => {
+                const flameIcon = new H.map.Icon("/flame.svg", {
+                    size: { w: 32, h: 32 },
+                });
+                const powerIcon = new H.map.Icon("/utility-pole.svg", {
+                    size: { w: 32, h: 32 },
+                });
+
+                // Create a marker with the custom icon
+                const hazardMarker = new H.map.Marker(hazard.location, {
+                    icon: hazard.type === "fire" ? flameIcon : powerIcon,
+                    data: {},
+                });
+
+                hazardMarker.setData("marker");
+                hazardMarker.addEventListener("tap", () => {
+                    handleHazardClick(hazard);
+                });
+
+                map.current!.addObject(hazardMarker);
+            });
+
+            drones.forEach((drone) => {
+                const icon = new H.map.Icon("/drone.svg", {
+                    size: { w: 32, h: 32 },
+                });
+
+                const droneMarker = new H.map.Marker(drone.location, {
+                    icon: icon,
+                    data: {},
+                });
+                droneMarker.setData("marker");
+                droneMarker.addEventListener("tap", () => {
+                    handleDroneClick(drone.name);
+                });
+
+                map.current!.addObject(droneMarker);
+            });
+        }
+    }, [currentLocation, persons, hazards, drones]);
+
+    return (
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+            }}
+            ref={mapRef}
+        />
+    );
+};

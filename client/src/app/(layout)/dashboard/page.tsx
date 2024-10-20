@@ -393,17 +393,17 @@ export default function Page() {
                 setIsRightPanelOpen(false);
                 setShowHumanPanel(true);
                 setSelectedHazard(null);
-                if (mapRef) {
-                    const targetLatLng = new google.maps.LatLng(
-                        person.bbox[0],
-                        person.bbox[1] + 0.005 // slight offset for panel
-                    );
-                    mapRef.panTo(targetLatLng);
-                    smoothZoom(mapRef, 16, mapRef.getZoom() as number);
-                }
+                // if (mapRef) {
+                //     const targetLatLng = new google.maps.LatLng(
+                //         person.bbox[0],
+                //         person.bbox[1] + 0.005 // slight offset for panel
+                //     );
+                //     mapRef.panTo(targetLatLng);
+                //     smoothZoom(mapRef, 16, mapRef.getZoom() as number);
+                // }
             }
         },
-        [selectMode, handlePersonSelection, mapRef]
+        [selectMode, handlePersonSelection]
     );
 
     const handleDroneClick = (droneName: string) => {

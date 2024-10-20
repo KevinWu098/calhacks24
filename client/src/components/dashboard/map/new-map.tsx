@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import H from "@here/maps-api-for-javascript";
-import { FlameIcon } from "lucide-react";
 
 interface Hazard {
     id: string;
@@ -46,9 +45,6 @@ export const HereMap = ({
     handlePersonClick,
     handleHazardClick,
     handleDroneClick,
-    rescueRoute,
-    selectMode,
-    selectedPersons,
 }: MapProps) => {
     const mapRef = useRef<HTMLDivElement | null>(null);
     const map = useRef<H.Map | null>(null);
@@ -108,75 +104,6 @@ export const HereMap = ({
         }
     }, [currentLocation]);
 
-    // Define planHereRoute inside HereMap
-    // const planHereRoute = useCallback(() => {
-    //     if (
-    //         map.current &&
-    //         router.current &&
-    //         currentLocation &&
-    //         selectedPersons.length > 0
-    //     ) {
-    //         const start = currentLocation;
-    //         const end = {
-    //             lat: selectedPersons[0]?.bbox[0],
-    //             lng: selectedPersons[0]?.bbox[1],
-    //         };
-
-    //         // Define avoid areas based on hazards
-    //         const avoidAreas = hazards
-    //             .map((hazard) => {
-    //                 const avoidAreaSize = 0.0005;
-    //                 return `bbox:${hazard.location.lng - avoidAreaSize},${hazard.location.lat + avoidAreaSize},${hazard.location.lng + avoidAreaSize},${hazard.location.lat - avoidAreaSize}`;
-    //             })
-    //             .join("|");
-
-    //         const routingParameters = {
-    //             routingMode: "fast",
-    //             transportMode: "pedestrian",
-    //             origin: `${start.lat},${start.lng}`,
-    //             destination: `${end.lat},${end.lng}`,
-    //             return: "polyline",
-    //             // ...(avoidAreas && { "avoid[areas]": avoidAreas }),
-    //         };
-
-    //         const onResult = (result) => {
-    //             if (result.routes && result.routes.length > 0) {
-    //                 const currentObjects = map.current?.getObjects();
-    //                 if (currentObjects) {
-    //                     currentObjects.forEach((object) => {
-    //                         if (object instanceof H.map.Polyline) {
-    //                             map.current?.removeObject(object);
-    //                         }
-    //                     });
-    //                 }
-
-    //                 const route = result.routes[0];
-    //                 route.sections.forEach((section) => {
-    //                     const linestring =
-    //                         H.geo.LineString.fromFlexiblePolyline(
-    //                             section.polyline
-    //                         );
-    //                     const routeLine = new H.map.Polyline(linestring, {
-    //                         style: { strokeColor: "blue", lineWidth: 4 },
-    //                         data: {},
-    //                     });
-    //                     map.current?.addObject(routeLine);
-    //                     map.current?.getViewModel().setLookAtData({
-    //                         bounds: routeLine.getBoundingBox()!,
-    //                         zoom: 16,
-    //                     });
-    //                 });
-    //             }
-    //         };
-
-    //         const onError = (error: unknown) => {
-    //             console.error("Error calculating route:", error);
-    //         };
-
-    //         router.current.calculateRoute(routingParameters, onResult, onError);
-    //     }
-    // }, [currentLocation, selectedPersons, hazards]);
-
     useEffect(() => {
         if (map.current) {
             planHereRoute(map, router);
@@ -217,6 +144,13 @@ export const HereMap = ({
                 personMarker.setData("marker");
                 personMarker.addEventListener("tap", () => {
                     handlePersonClick(person);
+                    map.current?.getViewModel().setLookAtData({
+                        position: {
+                            lat: person.bbox[0] - 0.001,
+                            lng: person.bbox[1] + 0.0035,
+                        },
+                        zoom: 16,
+                    });
                 });
 
                 map.current!.addObject(personMarker);
@@ -240,6 +174,13 @@ export const HereMap = ({
                 hazardMarker.setData("marker");
                 hazardMarker.addEventListener("tap", () => {
                     handleHazardClick(hazard);
+                    map.current?.getViewModel().setLookAtData({
+                        position: {
+                            lat: hazard.location.lat + 0.001,
+                            lng: hazard.location.lng - 0.0035,
+                        },
+                        zoom: 16,
+                    });
                 });
 
                 map.current!.addObject(hazardMarker);

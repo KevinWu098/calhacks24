@@ -9,6 +9,8 @@ import { Header } from "@/components/dashboard/header";
 import { Map } from "@/components/dashboard/map/map";
 import { MapOverview } from "@/components/dashboard/map/map-overview";
 import { Nav } from "@/components/dashboard/nav";
+import { Details } from "@/components/dashboard/rescue/details";
+import { NearbyHazards } from "@/components/dashboard/rescue/nearby-hazards";
 import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -614,7 +616,13 @@ export default function Page() {
                     />
                 </div> */}
 
-                {/* <RescueWorkflow /> */}
+                <div className="absolute right-4 top-16 flex flex-row space-x-2">
+                    <div className="space-y-2">
+                        <Details />
+                        <NearbyHazards />
+                    </div>
+                    <RescueWorkflow />
+                </div>
 
                 {/* Right Sidebar */}
                 <div

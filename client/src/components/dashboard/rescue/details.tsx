@@ -9,10 +9,10 @@ import { X } from "lucide-react";
 interface DetailsProps {
     detailId: string;
     handleClose: VoidFunction;
-    person: Person;
+    person?: Person;
 }
 
-export function Details({ detailId, handleClose, person }: DetailsProps) {
+export function Details({ detailId, handleClose }: DetailsProps) {
     return (
         <div className="max-w-[500px] space-y-2 rounded-sm border-2 border-gray-400 bg-white p-3">
             <div className="space-y-1">
@@ -61,8 +61,7 @@ export function Details({ detailId, handleClose, person }: DetailsProps) {
                             Location
                         </p>
                         <p className="line-clamp-1 text-ellipsis text-lg font-semibold leading-none">
-                            {person.bbox[0].toFixed(4)}° N,{" "}
-                            {person.bbox[1].toFixed(4)}° W
+                            35.7796° N, 78.6382° W
                         </p>
                     </div>
                     <div className="space-y-1">

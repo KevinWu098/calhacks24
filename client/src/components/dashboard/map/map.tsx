@@ -108,9 +108,9 @@ export function Map({
                     // animation: google.maps.Animation.SMOOTH,
                 }}
             >
-                {/* {currentLocation && (
+                {currentLocation && (
                     <>
-                        <Circle
+                        {/* <Circle
                             center={currentLocation}
                             radius={50}
                             options={{
@@ -120,7 +120,7 @@ export function Map({
                                 strokeOpacity: 0.8,
                                 strokeWeight: 2,
                             }}
-                        />
+                        /> */}
                         <Marker
                             position={currentLocation}
                             onClick={() => handleDroneClick("You")}
@@ -134,24 +134,24 @@ export function Map({
                             }}
                         />
                     </>
-                )} */}
+                )}
 
-                {/* {hazards.map((hazard, index) => (
+                {hazards.map((hazard, index) => (
                     <Marker
-                        key={index + 99}
+                        key={hazard.id}
                         position={hazard.location}
                         onClick={() => handleHazardClick(hazard)}
                         icon={{
                             path: google.maps.SymbolPath.CIRCLE,
                             fillColor:
-                                hazard.type === "warning" ? "yellow" : "red",
+                                hazard.type === "warning" ? "orange" : "red",
                             fillOpacity: 1,
                             strokeColor: "white",
                             strokeWeight: 2,
                             scale: 8,
                         }}
                     />
-                ))} */}
+                ))}
 
                 {persons.map((person) => (
                     <Marker

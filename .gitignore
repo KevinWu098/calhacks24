@@ -26,9 +26,6 @@ dist-ssr
 .venv
 **/.venv
 **/.venv/*
-*.pt
-
-**/*.pt
 
 
 datasets

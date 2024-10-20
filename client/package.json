@@ -9,6 +9,8 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@here/maps-api-for-javascript": "^1.59.0",
+        "@mkkellogg/gaussian-splats-3d": "^0.4.5",
         "@radix-ui/react-accordion": "^1.2.1",
         "@radix-ui/react-checkbox": "^1.1.2",
         "@radix-ui/react-progress": "^1.1.0",
@@ -17,6 +19,8 @@
         "@radix-ui/react-switch": "^1.1.1",
         "@react-google-maps/api": "^2.20.3",
         "axios": "^1.7.7",
+        "@react-three/drei": "^9.114.6",
+        "@react-three/fiber": "^8.17.10",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
         "google-maps-react": "^2.0.6",
@@ -25,7 +29,8 @@
         "react": "^18",
         "react-dom": "^18",
         "tailwind-merge": "^2.5.4",
-        "tailwindcss-animate": "^1.0.7"
+        "tailwindcss-animate": "^1.0.7",
+        "three": "^0.169.0"
     },
     "devDependencies": {
         "@ianvs/prettier-plugin-sort-imports": "^4.3.1",
@@ -33,6 +38,7 @@
         "@types/node": "^20",
         "@types/react": "^18",
         "@types/react-dom": "^18",
+        "@types/three": "^0.169.0",
         "eslint": "^8",
         "eslint-config-next": "14.2.15",
         "postcss": "^8",

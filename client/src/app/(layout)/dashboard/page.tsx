@@ -135,6 +135,7 @@ export default function Page() {
             details: "Potential hazard detected",
             createdBy: "AI System",
             createdAt: new Date(),
+            id: crypto.randomUUID(),
         },
         {
             type: "fire",
@@ -143,6 +144,7 @@ export default function Page() {
             details: "Active fire detected",
             createdBy: "Thermal Sensor",
             createdAt: new Date(),
+            id: crypto.randomUUID(),
         },
     ];
 
@@ -265,6 +267,7 @@ export default function Page() {
                         details: "",
                         createdBy: "",
                         createdAt: new Date(),
+                        id: crypto.randomUUID(),
                     },
                     {
                         type: "fire",
@@ -276,6 +279,7 @@ export default function Page() {
                         details: "",
                         createdBy: "",
                         createdAt: new Date(),
+                        id: crypto.randomUUID(),
                     },
                 ]);
 

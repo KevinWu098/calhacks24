@@ -711,9 +711,9 @@ export default function Page() {
 
                 const waypoint = selectedPersons.at(1)
                     ? {
-                          lat: selectedPersons[1]?.bbox[0],
-                          lng: selectedPersons[1]?.bbox[1],
-                      }
+                        lat: selectedPersons[1]?.bbox[0],
+                        lng: selectedPersons[1]?.bbox[1],
+                    }
                     : null;
 
                 // Define avoid areas based on hazards
@@ -974,9 +974,8 @@ export default function Page() {
 
                 {/* Right Sidebar */}
                 <div
-                    className={`pointer-events-auto absolute right-4 top-16 flex w-80 flex-col rounded-sm border-2 border-gray-400 bg-white shadow-lg transition-all duration-300 ease-in-out ${
-                        isRightPanelOpen ? "translate-x-0" : "translate-x-full"
-                    }`}
+                    className={`pointer-events-auto absolute right-4 top-16 flex w-80 flex-col rounded-sm border-2 border-gray-400 bg-white shadow-lg transition-all duration-300 ease-in-out ${isRightPanelOpen ? "translate-x-0" : "translate-x-full"
+                        }`}
                 >
                     {selectedHazard && (
                         <div className="flex h-fit flex-col rounded-sm bg-white p-4">
@@ -1138,14 +1137,13 @@ export default function Page() {
 
             {isDronesDeployed && (
                 <div className="absolute bottom-4 left-[340px] flex space-x-2 rounded-lg bg-white p-2 shadow-lg">
-                    {["warning", "fire"].map((hazardType, index) => (
+                    {["power", "fire"].map((hazardType, index) => (
                         <button
                             key={index}
-                            className={`rounded-full p-2 ${
-                                hazardType === "power"
+                            className={`rounded-full p-2 ${hazardType === "power"
                                     ? "bg-yellow-500"
                                     : "bg-red-500"
-                            } text-white`}
+                                } text-white`}
                             onClick={() =>
                                 handleFloatingHazardClick(
                                     hazardType as "warning" | "fire"

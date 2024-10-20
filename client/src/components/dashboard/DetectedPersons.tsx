@@ -1,7 +1,7 @@
 import { Person } from "@/app/(layout)/dashboard/page";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Route, User } from "lucide-react";
+import { Route, User, UserCircle } from "lucide-react";
 
 interface DetectedPersonsProps {
     persons: Person[];
@@ -42,25 +42,20 @@ export function DetectedPersons({
                 {persons.map((person, index) => (
                     <div
                         key={person.id}
-                        className={`mb-2 flex cursor-pointer items-center rounded-lg bg-gray-100 p-2 ${
-                            selectedPersons.some((p) => p.id === person.id)
+                        className={`mb-2 flex cursor-pointer items-center rounded-lg bg-gray-100 p-2 ${selectedPersons.some((p) => p.id === person.id)
                                 ? "ring-2 ring-blue-500"
                                 : ""
-                        }`}
+                            }`}
                         onClick={(e) =>
                             selectMode
                                 ? handlePersonSelection(
-                                      person,
-                                      e.ctrlKey || e.metaKey
-                                  )
+                                    person,
+                                    e.ctrlKey || e.metaKey
+                                )
                                 : handlePersonClick(person)
                         }
                     >
-                        <img
-                            src={`data:image/jpeg;base64,${person.image}`}
-                            alt={`Person ${index + 1}`}
-                            className="mr-2 h-12 w-12 rounded-full object-cover"
-                        />
+                        <UserCircle className="mr-2 h-12 w-12 text-gray-400" />
                         <div>
                             <p className="text-xs text-gray-600">
                                 {person.timestamp}

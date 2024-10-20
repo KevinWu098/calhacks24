@@ -71,7 +71,7 @@ with conn.cursor() as cursor:
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS hazards (
-        id VARCHAR(255) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         type ENUM('pole', 'fire', 'tree', 'flood'),
         location_lat FLOAT,
         location_lng FLOAT,
@@ -266,26 +266,41 @@ async def agent_websocket_endpoint(websocket: WebSocket):
 Key capabilities:
 1. Hazard reporting: You can analyze drone data and report potential hazards to the frontend interface.
 2. Route planning: Based on the id of the person in need of rescue and the list of hazards to avoid, you can suggest optimal routes for rescue teams.
+3. Database querying: You can execute SQL queries to retrieve information from the database.
+
+Database schema:
+- persons: Stores information about detected persons
+  (id INT, location_lat FLOAT, location_lng FLOAT, timestamp DATETIME)
+- drone_status: Stores drone status information
+  (id INT, name VARCHAR(255), is_connected BOOLEAN, battery_level INT, location_lat FLOAT, location_lng FLOAT, timestamp DATETIME)
+- hazards: Stores information about detected hazards
+  (id INT, type ENUM('pole', 'fire', 'tree', 'flood'), location_lat FLOAT, location_lng FLOAT, severity ENUM('Low', 'Moderate', 'High', 'Critical'), details TEXT, created_by VARCHAR(255), created_at DATETIME)
 
 Your responses should be clear, concise, and focused on providing actionable information to the drone operators. Prioritize safety and efficiency in all recommendations. When providing information or suggestions, always consider the urgency of search and rescue operations.
+
+You can use SQL queries to retrieve relevant information from the database to support your decision-making and recommendations. When constructing queries, be mindful of the data types for each column.
 
 Remember, your guidance directly impacts the safety of both rescue teams and those in need of assistance. Maintain a professional and supportive tone at all times."""
 
     # Define the tools within the WebSocket function
     @tool
-    async def display_hazards(hazards: List[str]):
+    async def display_hazards(hazards: List[str], drones: bool, humans: bool):
         """
         Display hazards on the map.
 
         Args:
             hazards: List of types of hazards to display on the map. One of the following: "all", "person", "fire", "tree", "power", "flood". Default is "all". If user says do not display any hazards, set hazards to empty list.
+            drones: Boolean value to determine if drones should be displayed on the map. Default is True.
+            humans: Boolean value to determine if humans should be displayed on the map. Default is True.
         """
         # Send the hazards back as JSON
         await websocket.send_json({
             "event": "display_hazards",
-            "hazards": hazards
+            "hazards": hazards,
+            "drones": drones,
+            "humans": humans
         })
-        return {"status": "success", "message": "Sent hazards to the frontend."}
+        return {"status": "success", "message": "Sent hazards, drones, and humans to the frontend."}
 
     @tool
     async def plan_route(id: str, hazards: List[str]):
@@ -303,9 +318,31 @@ Remember, your guidance directly impacts the safety of both rescue teams and tho
             "hazards": hazards
         })
         return {"status": "success", "message": "Route has been planned and sent to the frontend."}
+    
+    @tool
+    async def execute_sql(query: str):
+        """
+        Execute an SQL query against the database. 
+
+        Args:
+            query: The SQL query to execute.
+
+        Returns:
+            A dictionary containing the query results or an error message.
+        """
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(query)
+                results = cursor.fetchall()
+                columns = [column[0] for column in cursor.description]
+                data = [dict(zip(columns, row)) for row in results]
+                print("Here are the results of the query:", data)
+            return "Here are the results of the query:" + str(data)
+        except Exception as e:
+            return str(e)
 
     # Initialize tools
-    tools = [display_hazards, plan_route]
+    tools = [display_hazards, plan_route, execute_sql]
 
     # Initialize memory
     memory = MemorySaver()
@@ -318,7 +355,7 @@ Remember, your guidance directly impacts the safety of both rescue teams and tho
     )
 
     # Create the agent executor
-    agent_executor = create_react_agent(llm, tools, checkpointer=memory)
+    agent_executor = create_react_agent(llm, tools, state_modifier=system_prompt, checkpointer=memory)
 
     # Configuration for the agent
     config = {"configurable": {"thread_id": "agent_ws_connection"}}

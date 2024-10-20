@@ -10,7 +10,7 @@ export default function Page({ params }) {
     }
 
     return (
-        <div className="h-full">
+        <div className="h-full bg-black">
             <SplatViewer splat={slug ?? "foo"} />
         </div>
     );

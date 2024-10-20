@@ -22,11 +22,15 @@ interface MapProps {
     showDrones: boolean;
     showPeople: boolean;
     destinationId: string | undefined;
+
+    map: React.MutableRefObject<H.Map | null>;
+    mapRef: React.MutableRefObject<HTMLDivElement | null>;
+    router: React.MutableRefObject<H.service.RoutingService | null>;
 }
 
 export const HereMap = ({
     apikey,
-    center: _center,
+    center,
     zoom: _zoom,
     setZoom,
     persons,
@@ -42,70 +46,67 @@ export const HereMap = ({
     showPeople,
     showDrones,
     destinationId,
+
+    map,
+    mapRef,
+    router,
 }: MapProps) => {
-    const mapRef = useRef<HTMLDivElement | null>(null);
-    const map = useRef<H.Map | null>(null);
-    const platform = useRef<H.service.Platform | null>(null);
-    const behavior = useRef<H.mapevents.Behavior | null>(null);
-    const ui = useRef<H.ui.UI | null>(null);
-    const router = useRef<H.service.RoutingService | null>(null);
+    // const mapRef = useRef<HTMLDivElement | null>(null);
+    // const map = useRef<H.Map | null>(null);
+    // const platform = useRef<H.service.Platform | null>(null);
+    // const behavior = useRef<H.mapevents.Behavior | null>(null);
+    // const ui = useRef<H.ui.UI | null>(null);
+    // const router = useRef<H.service.RoutingService | null>(null);
 
-    useEffect(() => {
-        if (!map.current && mapRef.current) {
-            platform.current = new H.service.Platform({
-                apikey: apikey,
-            });
+    // useEffect(() => {
+    //     if (!map.current && mapRef.current) {
+    //         platform.current = new H.service.Platform({
+    //             apikey: apikey,
+    //         });
 
-            const defaultLayers: any = platform.current.createDefaultLayers();
+    //         const defaultLayers: any = platform.current.createDefaultLayers();
 
-            // Create a new map instance
-            map.current = new H.Map(
-                mapRef.current,
-                defaultLayers.vector.normal.map, // Use vector map layer
-                {
-                    zoom: 14, // Adjust initial zoom level
-                    center: _center, // Use the provided center
-                }
-            );
+    //         // Create a new map instance
+    //         map.current = new H.Map(
+    //             mapRef.current,
+    //             defaultLayers.vector.normal.map, // Use vector map layer
+    //             {
+    //                 zoom: 14, // Adjust initial zoom level
+    //                 center: _center, // Use the provided center
+    //             }
+    //         );
 
-            setMapInstance(map.current); // Set the map instance
+    //         setMapInstance(map.current); // Set the map instance
 
-            // Enable map interactions
-            behavior.current = new H.mapevents.Behavior(
-                new H.mapevents.MapEvents(map.current)
-            );
+    //         // Enable map interactions
+    //         behavior.current = new H.mapevents.Behavior(
+    //             new H.mapevents.MapEvents(map.current)
+    //         );
 
-            H.ui.UI.createDefault(map.current, defaultLayers);
+    //         H.ui.UI.createDefault(map.current, defaultLayers);
 
-            router.current = platform.current.getRoutingService(undefined, 8);
+    //         router.current = platform.current.getRoutingService(undefined, 8);
 
-            map.current.addEventListener("mapviewchangeend", () => {
-                setZoom(map.current!.getZoom());
-            });
-        }
+    //         map.current.addEventListener("mapviewchangeend", () => {
+    //             setZoom(map.current!.getZoom());
+    //         });
+    //     }
 
-        return () => {
-            if (map.current) {
-                map.current.dispose();
-                map.current = null;
-            }
-        };
-    }, [apikey, setZoom, _center, setMapInstance]);
+    //     return () => {
+    //         if (map.current) {
+    //             map.current.dispose();
+    //             map.current = null;
+    //         }
+    //     };
+    // }, [apikey, setZoom, _center, setMapInstance]);
 
     // Pan to center when it changes
     useEffect(() => {
         if (map.current) {
-            map.current.setCenter(_center);
+            map.current.setCenter(center);
             map.current.setZoom(15);
         }
-    }, [_center]);
-
-    useEffect(() => {
-        if (map.current) {
-            console.log("in useeffect");
-            planHereRoute(map, router);
-        }
-    }, [planHereRoute, destinationId, avoidedHazards]);
+    }, [center]);
 
     useEffect(() => {
         if (map.current) {
@@ -115,8 +116,8 @@ export const HereMap = ({
                 }
             });
 
-            if (_center) {
-                const centerMarker = new H.map.Marker(_center);
+            if (center) {
+                const centerMarker = new H.map.Marker(center);
 
                 centerMarker.setData("marker");
                 centerMarker.addEventListener("tap", () => {
@@ -208,7 +209,7 @@ export const HereMap = ({
                     map.current!.addObject(droneMarker);
                 });
         }
-    }, [_center, persons, hazards, drones, displayedHazards]);
+    }, [center, persons, hazards, drones, displayedHazards]);
 
     return (
         <div

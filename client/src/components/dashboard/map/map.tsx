@@ -19,6 +19,9 @@ interface MapProps {
     handleHazardClick: (hazard: Hazard) => void;
     handleDroneClick: (droneName: string) => void;
     onMapLoad: (map: google.maps.Map) => void;
+    rescueRoute: google.maps.LatLng[];
+    selectMode: boolean;
+    selectedPersons: Person[];
 }
 
 export function Map({
@@ -33,6 +36,9 @@ export function Map({
     handleHazardClick,
     handleDroneClick,
     onMapLoad,
+    rescueRoute,
+    selectMode,
+    selectedPersons,
 }: MapProps) {
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string, // type cast
@@ -51,6 +57,23 @@ export function Map({
         mapRef.current = map;
         onMapLoad(map);
     };
+
+    useEffect(() => {
+        if (mapRef.current && rescueRoute.length > 0) {
+            const rescueRoutePath = new google.maps.Polyline({
+                path: rescueRoute,
+                geodesic: true,
+                strokeColor: "#FF0000",
+                strokeOpacity: 1.0,
+                strokeWeight: 2,
+            });
+            rescueRoutePath.setMap(mapRef.current);
+
+            return () => {
+                rescueRoutePath.setMap(null);
+            };
+        }
+    }, [mapRef, rescueRoute]);
 
     if (!isLoaded) {
         return (
@@ -74,7 +97,7 @@ export function Map({
                     streetViewControl: false,
                     mapTypeControl: false,
                     fullscreenControl: false,
-                    animation: google.maps.Animation.SMOOTH,
+                    // animation: google.maps.Animation.SMOOTH,
                 }}
             >
                 {currentLocation && (
@@ -92,7 +115,7 @@ export function Map({
                         />
                         <Marker
                             position={currentLocation}
-                            onClick={handleDroneClick}
+                            onClick={() => handleDroneClick("You")}
                             icon={{
                                 path: google.maps.SymbolPath.CIRCLE,
                                 fillColor: "lime",
@@ -122,9 +145,9 @@ export function Map({
                     />
                 ))}
 
-                {persons.map((person, index) => (
+                {persons.map((person) => (
                     <Marker
-                        key={index}
+                        key={person.id}
                         position={{
                             lat: person.bbox[0],
                             lng: person.bbox[1],
@@ -132,7 +155,11 @@ export function Map({
                         onClick={() => handlePersonClick(person)}
                         icon={{
                             path: google.maps.SymbolPath.CIRCLE,
-                            fillColor: "blue",
+                            fillColor: selectedPersons.some(
+                                (p) => p.id === person.id
+                            )
+                                ? "blue"
+                                : "lightblue",
                             fillOpacity: 1,
                             strokeColor: "white",
                             strokeWeight: 2,

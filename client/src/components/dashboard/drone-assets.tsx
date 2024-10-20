@@ -18,7 +18,7 @@ interface Drone {
     name: string;
     isConnected: boolean;
     batteryLevel: number;
-    startingCoordinate: string;
+    startingCoordinate?: string;
 }
 
 interface DroneAssetsProps {
@@ -26,6 +26,7 @@ interface DroneAssetsProps {
     isDronesDeployed: boolean;
     drones: Drone[];
     dataMode: "fake" | "real";
+    socket: WebSocket;
 }
 
 export function DroneAssets({
@@ -33,18 +34,39 @@ export function DroneAssets({
     isDronesDeployed,
     drones,
     dataMode,
+    socket,
 }: DroneAssetsProps) {
     const [activeDrones, setActiveDrones] = useState<string[]>([]);
     const [isVisible, setIsVisible] = useState(true);
+    const [availableDrones, setAvailableDrones] = useState<Drone[]>([]);
 
     useEffect(() => {
         if (isDronesDeployed) {
-            const timer = setTimeout(() => setIsVisible(false), 500); // Hide component after animation
+            const timer = setTimeout(() => setIsVisible(false), 500);
             return () => clearTimeout(timer);
         }
     }, [isDronesDeployed]);
 
-    // if (!isVisible) return null;
+    useEffect(() => {
+        if (dataMode === "real" && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ event: "GET_DRONES" }));
+        }
+    }, [dataMode, socket]);
+
+    useEffect(() => {
+        const handleMessage = (event: MessageEvent) => {
+            const data = JSON.parse(event.data);
+            if (data.event === "DRONE_LIST") {
+                setAvailableDrones(data.drones);
+            }
+        };
+
+        socket.addEventListener("message", handleMessage);
+
+        return () => {
+            socket.removeEventListener("message", handleMessage);
+        };
+    }, [socket]);
 
     const getBatteryIcon = (level: number) => {
         if (level > 90) return <BatteryFull />;
@@ -100,7 +122,9 @@ export function DroneAssets({
                       startingCoordinate: "35.6762° N, 139.6503° E",
                   },
               ]
-            : drones;
+            : dataMode === "real"
+              ? availableDrones
+              : drones;
 
     useEffect(() => {
         setActiveDrones([]);
@@ -143,11 +167,14 @@ export function DroneAssets({
                                 {drone.name}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {drone.startingCoordinate}
+                                {drone.startingCoordinate ||
+                                    "No starting coordinate"}
                             </p>
                             <div className="mt-1 flex items-center space-x-2">
                                 <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                                    Active
+                                    {drone.isConnected
+                                        ? "Connected"
+                                        : "Available"}
                                 </span>
                                 {drone.isConnected ? (
                                     <Wifi

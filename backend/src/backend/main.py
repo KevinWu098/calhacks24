@@ -9,6 +9,8 @@ import json
 from djitellopy import Tello
 import base64
 import time
+from drone_agent import drone_agent, DroneData, DroneStatus, DetectedPerson, DeployCommand, MoveCommand, DroneList
+from uagents import Context
 
 app = FastAPI()
 
@@ -80,69 +82,59 @@ def detect_objects(frame):
             if class_name == "person":
                 conf = float(box.conf)
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-                persons.append({
-                    "confidence": conf,
-                    "bbox": [x1, y1, x2, y2]
-                })
+                persons.append(DetectedPerson(
+                    confidence=conf,
+                    bbox=[x1, y1, x2, y2]
+                ))
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
     return frame, persons
 
-async def process_video_stream(websocket: WebSocket):
-    global tello
-    frame_read = tello.get_frame_read()
-    last_battery_update = 0
-  
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
     try:
         while True:
             try:
                 data = await websocket.receive_json()
                 event = data["event"]
 
-                if event == "DEPLOY":
-                    # ! Do something here
-                    
-                    tello.takeoff()
-                    pass
+                if event == "GET_DRONES":
+                    # Create a new context for this request
+                    ctx = Context()
+                    # Send a message to the drone agent and wait for a response
+                    response = await ctx.send(drone_agent.address, DroneList(drones=[]))
+                    # Check if we received a DroneList response
+                    if isinstance(response, DroneList):
+                        await websocket.send_json({
+                            "event": "DRONE_LIST",
+                            "drones": [drone.dict() for drone in response.drones]
+                        })
+                    else:
+                        print(f"Unexpected response: {response}")
+                elif event == "DEPLOY":
+                    await drone_agent.send("self", DeployCommand(command="takeoff"))
+                elif event == "MOVE":
+                    x, y, z, yaw = data.get("x", 0), data.get("y", 0), data.get("z", 0), data.get("yaw", 0)
+                    await drone_agent.send("self", MoveCommand(x=x, y=y, z=z, yaw=yaw))
 
+                drone_data = drone_agent.storage.get("drone_data")
+                if isinstance(drone_data, DroneData):
+                    await websocket.send_json({
+                        "persons": [p.dict() for p in drone_data.persons],
+                        "frame": drone_data.frame,
+                        "droneStatus": drone_data.drone_status.dict()
+                    })
             except asyncio.TimeoutError:
-                pass  # No message received, continue
+                pass
             
-            frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_RGB2BGR)
-            if frame is None:
-                continue
-            
-            processed_frame, persons = detect_objects(frame)
-            
-            # Encode the frame as base64
-            _, buffer = cv2.imencode('.jpg', processed_frame)
-            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-            
-            # Get drone connection status and battery level
-            drone_connected = tello.stream_on
-            battery_level = tello.get_battery()
-
-            await websocket.send_json({
-                "persons": persons,
-                "frame": jpg_as_text,
-                "droneStatus": {
-                    "name": "Drone 1",
-                    "isConnected": drone_connected,
-                    "batteryLevel": battery_level
-                }
-            })
-            await asyncio.sleep(0.1)  # Adjust this value to control the update frequency
+            await asyncio.sleep(0.1)
     except WebSocketDisconnect:
         print("WebSocket disconnected")
     finally:
         disconnect_from_drone()
 
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    connect_to_drone()
-    await process_video_stream(websocket)
-
 if __name__ == "__main__":
     import uvicorn
+    drone_agent.run()
     uvicorn.run(app, host="0.0.0.0", port=8000)

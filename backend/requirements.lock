@@ -7,27 +7,76 @@
 #   all-features: false
 #   with-sources: false
 #   generate-hashes: false
-#   universal: false
 
 -e file:.
+aiohappyeyeballs==2.4.3
+    # via aiohttp
+aiohttp==3.10.10
+    # via uagents
+aiosignal==1.3.1
+    # via aiohttp
+annotated-types==0.7.0
+    # via pydantic
+anyio==4.6.2.post1
+    # via starlette
+apispec==6.6.1
+    # via uagents
+attrs==24.2.0
+    # via aiohttp
+    # via jsonschema
+    # via referencing
+av==13.1.0
+    # via djitellopy
+bech32==1.2.0
+    # via cosmpy
+    # via uagents
 certifi==2024.8.30
     # via requests
 charset-normalizer==3.4.0
     # via requests
+click==8.1.7
+    # via uvicorn
+colorama==0.4.6
+    # via click
+    # via tqdm
 contourpy==1.3.0
     # via matplotlib
+cosmpy==0.9.2
+    # via uagents
 cycler==0.12.1
     # via matplotlib
+djitellopy==2.5.0
+    # via backend
+ecdsa==0.19.0
+    # via cosmpy
+    # via uagents
+fastapi==0.115.2
+    # via backend
 filelock==3.16.1
     # via torch
 fonttools==4.54.1
     # via matplotlib
+frozenlist==1.4.1
+    # via aiohttp
+    # via aiosignal
 fsspec==2024.9.0
     # via torch
+googleapis-common-protos==1.65.0
+    # via cosmpy
+grpcio==1.67.0
+    # via cosmpy
+h11==0.14.0
+    # via uvicorn
 idna==3.10
+    # via anyio
     # via requests
+    # via yarl
 jinja2==3.1.4
     # via torch
+jsonschema==4.23.0
+    # via cosmpy
+jsonschema-specifications==2024.10.1
+    # via jsonschema
 kiwisolver==1.4.7
     # via matplotlib
 markupsafe==3.0.2
@@ -37,10 +86,18 @@ matplotlib==3.9.2
     # via ultralytics
 mpmath==1.3.0
     # via sympy
+msgpack==1.1.0
+    # via uagents
+multidict==6.1.0
+    # via aiohttp
+    # via yarl
+netifaces==0.11.0
+    # via backend
 networkx==3.4.1
     # via torch
 numpy==2.1.2
     # via contourpy
+    # via djitellopy
     # via matplotlib
     # via opencv-python
     # via pandas
@@ -50,31 +107,54 @@ numpy==2.1.2
     # via ultralytics
     # via ultralytics-thop
 opencv-python==4.10.0.84
+    # via djitellopy
     # via ultralytics
 packaging==24.1
+    # via apispec
     # via matplotlib
 pandas==2.2.3
     # via seaborn
     # via ultralytics
 pillow==11.0.0
+    # via djitellopy
     # via matplotlib
     # via torchvision
     # via ultralytics
+propcache==0.2.0
+    # via yarl
+protobuf==4.25.5
+    # via cosmpy
+    # via googleapis-common-protos
 psutil==6.1.0
     # via ultralytics
 py-cpuinfo==9.0.0
     # via ultralytics
+pycryptodome==3.21.0
+    # via cosmpy
+pydantic==2.8.2
+    # via fastapi
+    # via uagents
+pydantic-core==2.20.1
+    # via pydantic
 pyparsing==3.2.0
     # via matplotlib
 python-dateutil==2.9.0.post0
+    # via cosmpy
     # via matplotlib
     # via pandas
 pytz==2024.2
     # via pandas
 pyyaml==6.0.2
     # via ultralytics
+referencing==0.35.1
+    # via jsonschema
+    # via jsonschema-specifications
 requests==2.32.3
+    # via cosmpy
     # via ultralytics
+rpds-py==0.20.0
+    # via jsonschema
+    # via referencing
 scipy==1.14.1
     # via ultralytics
 seaborn==0.13.2
@@ -82,7 +162,12 @@ seaborn==0.13.2
 setuptools==75.2.0
     # via torch
 six==1.16.0
+    # via ecdsa
     # via python-dateutil
+sniffio==1.3.1
+    # via anyio
+starlette==0.40.0
+    # via fastapi
 sympy==1.13.1
     # via torch
 torch==2.5.0
@@ -94,12 +179,23 @@ torchvision==0.20.0
 tqdm==4.66.5
     # via ultralytics
 typing-extensions==4.12.2
+    # via fastapi
+    # via pydantic
+    # via pydantic-core
     # via torch
 tzdata==2024.2
     # via pandas
+uagents==0.16.2
+    # via backend
 ultralytics==8.3.17
     # via backend
 ultralytics-thop==2.0.9
     # via ultralytics
 urllib3==2.2.3
     # via requests
+uvicorn==0.30.6
+    # via uagents
+websockets==10.4
+    # via uagents
+yarl==1.15.5
+    # via aiohttp

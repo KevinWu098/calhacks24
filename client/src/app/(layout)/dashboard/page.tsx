@@ -568,6 +568,7 @@ export default function Page() {
                         isDronesDeployed={isDronesDeployed}
                         drones={drones}
                         dataMode={dataMode}
+                        socket={socket}
                     />
                 </div>
                 <div

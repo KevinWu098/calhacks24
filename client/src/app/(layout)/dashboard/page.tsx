@@ -64,8 +64,9 @@ export interface Hazard {
     createdAt: Date;
 }
 
-// Add this new type definition
 type DataMode = "fake" | "real";
+
+const socket = new WebSocket("ws://localhost:8000/ws");
 
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
@@ -196,8 +197,6 @@ export default function Page() {
     // Modify the useEffect for WebSocket to use real data when in "real" mode
     useEffect(() => {
         if (dataMode === "real") {
-            const socket = new WebSocket("ws://localhost:8000/ws");
-
             socket.onopen = () => {
                 console.log("WebSocket connection established");
                 setIsConnected(true);
@@ -297,7 +296,7 @@ export default function Page() {
                         image: "",
                         timestamp: new Date().toLocaleTimeString(),
                     }));
-                console.log(newPersons);
+
                 setPersons(newPersons);
             } else {
                 // Clear fake data when in real mode
@@ -459,6 +458,12 @@ export default function Page() {
         // setTimeout(() => {
 
         // }, 5000);
+
+        socket.send(
+            JSON.stringify({
+                event: "DEPLOY",
+            })
+        );
     }, [currentLocation, dataMode, generateFakeDrones, mapRef]);
 
     const getSeverityColor = (severity: Hazard["severity"]) => {

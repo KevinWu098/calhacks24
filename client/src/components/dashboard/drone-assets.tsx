@@ -54,6 +54,10 @@ export function DroneAssets({
     };
 
     const handleClickDrone = (droneName: string) => {
+        if (isDronesDeployed) {
+            return;
+        }
+
         setActiveDrones((prev) => {
             const output = [...prev];
             const index = prev.indexOf(droneName);
@@ -97,6 +101,10 @@ export function DroneAssets({
                   },
               ]
             : drones;
+
+    useEffect(() => {
+        setActiveDrones([]);
+    }, [dataMode]);
 
     return (
         <div
@@ -162,7 +170,10 @@ export function DroneAssets({
                 ))}
 
                 <Button
-                    className="w-full bg-blue-500 text-white hover:bg-blue-600"
+                    className={cn(
+                        "w-full bg-blue-500 text-white hover:bg-blue-600",
+                        isDronesDeployed && "hidden"
+                    )}
                     onClick={onDeployDrones}
                     disabled={isDronesDeployed || activeDrones.length <= 0}
                 >

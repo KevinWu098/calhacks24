@@ -67,6 +67,19 @@ async def process_video_stream(websocket: WebSocket):
     
     try:
         while True:
+            try:
+                data = await websocket.receive_json()
+                event = data["event"]
+
+                if event == "DEPLOY":
+                    # ! Do something here
+                    
+                    tello.takeoff()
+                    pass
+
+            except asyncio.TimeoutError:
+                pass  # No message received, continue
+            
             frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_RGB2BGR)
             if frame is None:
                 continue

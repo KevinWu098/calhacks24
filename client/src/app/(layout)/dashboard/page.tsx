@@ -447,11 +447,11 @@ export default function Page() {
     // Add this new function to generate simulation data
     const generateSimulationData = (center: { lat: number; lng: number }) => {
         const hazardOffset1 = { lat: 0.005, lng: 0.007 };
-        const hazardOffset2 = { lat: -0.003, lng: 0.006 };
-        const hazardOffset3 = { lat: 0, lng: 0.003 }; // New fire offset
-        const personOffset1 = { lat: 0.002, lng: -0.004 };
+        const hazardOffset2 = { lat: -0.003, lng: -0.006 };
+        const hazardOffset3 = { lat: 0.0004, lng: 0.007 }; // New fire offset
+        const personOffset1 = { lat: 0.0004, lng: 0.004 };
         const personOffset2 = { lat: -0.006, lng: 0.003 };
-        const personOffset3 = { lat: 0.002, lng: 0.01 }; // New person offset
+        const personOffset3 = { lat: 0.0004, lng: 0.01 }; // New person offset
         const personOffset4 = { lat: -0.006, lng: -0.003 }; // New person offset
         const droneOffset1 = { lat: 0.004, lng: 0.005 };
         const droneOffset2 = { lat: -0.005, lng: -0.002 };

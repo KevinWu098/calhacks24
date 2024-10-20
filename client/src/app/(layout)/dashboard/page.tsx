@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import axios from "axios";
 import {
     AlertTriangle,
     BatteryFull,
@@ -32,7 +33,6 @@ import {
     Wifi,
     WifiOff,
 } from "lucide-react";
-import axios from 'axios';
 
 export interface Person {
     id: number;
@@ -205,13 +205,13 @@ export default function Page() {
 
     // Modify the useEffect hook that fetches data
     useEffect(() => {
-        // fetch data from singlestore
+        // Fetch data from SingleStore when real-time mode is active
         if (dataMode === "real") {
             const fetchData = async () => {
                 try {
                     const [personsResponse, droneResponse] = await Promise.all([
-                        axios.get('http://localhost:8000/api/persons'),
-                        axios.get('http://localhost:8000/api/drone_status')
+                        axios.get("http://localhost:8000/api/persons"),
+                        axios.get("http://localhost:8000/api/drone_status"),
                     ]);
 
                     setPersons(personsResponse.data);
@@ -223,7 +223,7 @@ export default function Page() {
 
             const interval = setInterval(fetchData, 1000); // Fetch data every second
 
-            return () => clearInterval(interval); 
+            return () => clearInterval(interval);
         }
     }, [dataMode]);
 

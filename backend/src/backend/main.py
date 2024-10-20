@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from drone_agent import drone_agent, DroneData, DroneStatus, DetectedObject, DeployCommand, MoveCommand, DroneList
 from uagents import Context
 
+
 load_dotenv()
 
 app = FastAPI()
@@ -56,7 +57,7 @@ with conn.cursor() as cursor:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS drone_status (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255), 
+        name VARCHAR(255),
         is_connected BOOLEAN,
         battery_level INT,
         location_lat FLOAT,
@@ -64,6 +65,124 @@ with conn.cursor() as cursor:
         timestamp DATETIME
     )
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS hazards (
+        id VARCHAR(255) PRIMARY KEY,
+        type ENUM('pole', 'fire', 'tree', 'flood'),
+        location_lat FLOAT,
+        location_lng FLOAT,
+        severity ENUM('Low', 'Moderate', 'High', 'Critical'),
+        details TEXT,
+        created_by VARCHAR(255),
+        created_at DATETIME
+    )
+    """)
+
+def connect_to_drone():
+    global tello
+    tello = Tello()
+    tello.connect()
+    tello.streamon()
+    
+    time.sleep(4)
+    
+    tello.takeoff()
+
+    tello.move_forward(200)
+
+    # circle()
+
+    tello.send_rc_control(0,0,0,0)  
+    time.sleep(0.1)
+    # Turns motors on:
+    tello.send_rc_control(-100,-100,-100,100)
+    time.sleep(2)
+    tello.send_rc_control(0,10,20,0)
+    time.sleep(3)
+    tello.send_rc_control(0,0,0,0)
+    time.sleep(2)
+
+    v_up = 0
+    for _ in range(4):
+        tello.send_rc_control(40, -5, v_up, -35)
+        time.sleep(4)
+        tello.send_rc_control(0,0,0,0)
+        time.sleep(0.5)
+
+    tello.land()
+    
+
+def disconnect_from_drone():
+    global tello
+    if tello:
+        tello.streamoff()
+        tello.end()
+        tello = None
+
+def detect_objects(frame):
+    results = model(frame)
+    persons = []
+
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            cls = int(box.cls)
+            class_name = model.names[cls]
+            if class_name == "person":
+                conf = float(box.conf)
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                persons.append({
+                    "confidence": conf,
+                    "bbox": [x1, y1, x2, y2]
+                })
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+    return frame, persons
+
+async def process_video_stream(websocket: WebSocket):
+    global tello
+    frame_read = tello.get_frame_read()
+    
+    try:
+        while True:
+            # Capture telemetry data
+            drone_connected = tello.stream_on
+            battery_level = tello.get_battery()
+            location_lat = tello.get_latitude()  # Replace with actual function
+            location_lng = tello.get_longitude() # Replace with actual function
+
+            # Process frame
+            frame = cv2.cvtColor(frame_read.frame, cv2.COLOR_RGB2BGR)
+            if frame is None:
+                continue
+            
+            processed_frame, persons = detect_objects(frame)
+            
+            # Encode the frame as base64
+            _, buffer = cv2.imencode('.jpg', processed_frame)
+            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+            
+            # Submit data to the database
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                INSERT INTO drone_status (name, is_connected, battery_level, location_lat, location_lng, timestamp)
+                VALUES (%s, %s, %s, %s, %s, NOW())
+                """, ("Drone 1", drone_connected, battery_level, location_lat, location_lng))
+
+            conn.commit()
+
+            # Send data to the WebSocket client
+            await websocket.send_json({
+                "message": "Data inserted into SingleStore"
+            })
+            
+            await asyncio.sleep(0.1)  # Adjust this value to control update frequency
+
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    finally:
+        disconnect_from_drone()
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):

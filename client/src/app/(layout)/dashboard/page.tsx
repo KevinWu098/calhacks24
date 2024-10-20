@@ -401,11 +401,12 @@ export default function Page() {
             } else {
                 setFocusedItem("person");
                 setIsRightPanelOpen(false);
+                setShowHumanPanel(true);
                 setSelectedHazard(null);
                 if (mapRef) {
                     const targetLatLng = new google.maps.LatLng(
                         person.bbox[0],
-                        person.bbox[1]
+                        person.bbox[1] + 0.005 // slight offset for panel
                     );
                     mapRef.panTo(targetLatLng);
                     smoothZoom(mapRef, 16, mapRef.getZoom() as number);
@@ -537,30 +538,16 @@ export default function Page() {
         }
     };
 
+    const [showHumanPanel, setShowHumanPanel] = useState(false);
+
+    const handleCloseHumanPanel = () => {
+        setShowHumanPanel(false);
+    };
+
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
-            {/* Map container */}
-            <div className="absolute inset-0 z-0">
-                <Map
-                    center={center}
-                    zoom={mapZoom}
-                    setZoom={setMapZoom}
-                    currentLocation={isDronesDeployed ? currentLocation : null}
-                    persons={isDronesDeployed ? persons : []}
-                    hazards={isDronesDeployed ? hazards : []}
-                    drones={isDronesDeployed ? drones : []}
-                    handlePersonClick={handlePersonClick}
-                    handleHazardClick={handleHazardClick}
-                    handleDroneClick={handleDroneClick}
-                    onMapLoad={onMapLoad}
-                    rescueRoute={rescueRoute}
-                    selectMode={selectMode}
-                    selectedPersons={selectedPersons}
-                />
-            </div>
-
             {/* Overlay container for all UI elements */}
-            <div className="pointer-events-none relative z-10 h-full w-full">
+            <div className="relative z-10">
                 <div className="pointer-events-auto">
                     <Nav
                         isConnected={isConnected}
@@ -616,13 +603,15 @@ export default function Page() {
                     />
                 </div> */}
 
-                <div className="absolute right-4 top-16 flex flex-row space-x-2">
-                    <div className="space-y-2">
-                        <Details />
-                        <NearbyHazards />
+                {showHumanPanel ? (
+                    <div className="absolute right-4 top-16 flex flex-row space-x-2">
+                        <div className="space-y-2">
+                            <Details handleClose={handleCloseHumanPanel} />
+                            <NearbyHazards />
+                        </div>
+                        <RescueWorkflow />
                     </div>
-                    <RescueWorkflow />
-                </div>
+                ) : null}
 
                 {/* Right Sidebar */}
                 <div
@@ -784,6 +773,25 @@ export default function Page() {
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div className="absolute inset-0 z-0">
+                <Map
+                    center={center}
+                    zoom={mapZoom}
+                    setZoom={setMapZoom}
+                    currentLocation={isDronesDeployed ? currentLocation : null}
+                    persons={isDronesDeployed ? persons : []}
+                    hazards={isDronesDeployed ? hazards : []}
+                    drones={isDronesDeployed ? drones : []}
+                    handlePersonClick={handlePersonClick}
+                    handleHazardClick={handleHazardClick}
+                    handleDroneClick={handleDroneClick}
+                    onMapLoad={onMapLoad}
+                    rescueRoute={rescueRoute}
+                    selectMode={selectMode}
+                    selectedPersons={selectedPersons}
+                />
             </div>
         </div>
     );

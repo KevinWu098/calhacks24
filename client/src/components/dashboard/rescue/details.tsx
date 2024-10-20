@@ -1,11 +1,22 @@
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
+import { X } from "lucide-react";
 
-export function Details() {
+interface DetailsProps {
+    handleClose: VoidFunction;
+}
+
+export function Details({ handleClose }: DetailsProps) {
     return (
         <div className="max-w-[500px] space-y-4 rounded-sm border-2 border-gray-400 bg-white p-3">
             <div className="space-y-1">
-                <p className="font-semibold">Human Detection</p>
+                <div className="flex-between">
+                    <p className="font-semibold">Human Detection</p>
+                    <X
+                        onClick={handleClose}
+                        className="cursor-pointer"
+                    />
+                </div>
                 <Separator />
             </div>
 

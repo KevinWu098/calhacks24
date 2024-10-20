@@ -9,7 +9,6 @@ interface MapProps {
     center: { lat: number; lng: number };
     zoom: number;
     setZoom: (zoom: number) => void;
-    currentLocation: { lat: number; lng: number } | null;
     persons: Person[];
     hazards: Hazard[];
     planHereRoute: (map: any, route: any) => void;
@@ -26,7 +25,6 @@ export const HereMap = ({
     center: _center,
     zoom: _zoom,
     setZoom,
-    currentLocation,
     persons,
     hazards,
     drones,
@@ -87,13 +85,13 @@ export const HereMap = ({
         };
     }, [apikey, setZoom]);
 
-    // Pan to current location when it changes
+    // Pan to center when it changes
     useEffect(() => {
-        if (currentLocation && map.current) {
-            map.current.setCenter(currentLocation);
+        if (map.current) {
+            map.current.setCenter(_center);
             map.current.setZoom(15);
         }
-    }, [currentLocation]);
+    }, [_center]);
 
     useEffect(() => {
         if (map.current) {
@@ -109,15 +107,15 @@ export const HereMap = ({
                 }
             });
 
-            if (currentLocation) {
-                const currentLocationMarker = new H.map.Marker(currentLocation);
+            if (_center) {
+                const centerMarker = new H.map.Marker(_center);
 
-                currentLocationMarker.setData("marker");
-                currentLocationMarker.addEventListener("tap", () => {
+                centerMarker.setData("marker");
+                centerMarker.addEventListener("tap", () => {
                     handleDroneClick("You");
                 });
 
-                map.current.addObject(currentLocationMarker);
+                map.current.addObject(centerMarker);
             }
 
             persons.forEach((person) => {
@@ -201,7 +199,7 @@ export const HereMap = ({
             });
         }
     }, [
-        currentLocation,
+        _center,
         persons,
         hazards,
         drones,

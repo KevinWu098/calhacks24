@@ -72,7 +72,7 @@ const socketTwo = new WebSocket(
 
 export default function Page() {
     const [persons, setPersons] = useState<Person[]>([]);
-    const [center, setCenter] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
+    const [center] = useState({ lat: 35.7796, lng: -78.6382 }); // Centered on Raleigh, NC
     const [isRightPanelOpen, setIsRightPanelOpen] = useState(false);
     const [isConnected, setIsConnected] = useState(false);
     const [currentLocation, setCurrentLocation] = useState<{
@@ -95,6 +95,8 @@ export default function Page() {
     const [selectedPersons, setSelectedPersons] = useState<Person[]>([]);
     const [rescueRoute, setRescueRoute] = useState<google.maps.LatLng[]>([]);
     const [selectMode, setSelectMode] = useState(false);
+    const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
+    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -478,14 +480,8 @@ export default function Page() {
 
     const planHereRoute = useCallback(
         (map: any, router: any) => {
-            if (
-                map.current &&
-                router.current &&
-                currentLocation &&
-                selectedPersons.length > 0
-            ) {
-                console.log(selectedPersons);
-                const start = currentLocation;
+            if (map.current && router.current && selectedPersons.length > 0) {
+                const start = center; // Use center instead of currentLocation
                 const end = {
                     lat: selectedPersons[0]?.bbox[0],
                     lng: selectedPersons[0]?.bbox[1],
@@ -558,11 +554,8 @@ export default function Page() {
                 );
             }
         },
-        [currentLocation, selectedPersons, hazards]
+        [center, selectedPersons, hazards, avoidedHazards]
     );
-
-    const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
-    const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
 
     const handleClickMe = () => {
         socketTwo.send(
@@ -613,6 +606,86 @@ export default function Page() {
             };
         };
     }, []);
+
+    // Load fake data
+    useEffect(() => {
+        if (dataMode === "fake") {
+            // Fake persons data
+            const fakePersons: Person[] = [
+                {
+                    id: "person1",
+                    confidence: 0.95,
+                    bbox: [35.7796, -78.6382, 0, 0],
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    id: "person2",
+                    confidence: 0.88,
+                    bbox: [35.7798, -78.6385, 0, 0],
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    id: "person3",
+                    confidence: 0.92,
+                    bbox: [35.7794, -78.638, 0, 0],
+                    image: "base64_encoded_image_data_here",
+                    timestamp: new Date().toISOString(),
+                },
+            ];
+            setPersons(fakePersons);
+
+            // Fake hazards data
+            const fakeHazards: Hazard[] = [
+                {
+                    id: "hazard1",
+                    type: "warning",
+                    location: { lat: 35.78, lng: -78.639 },
+                    severity: "Moderate",
+                    details: "Potential structural damage detected",
+                    createdBy: "AI System",
+                    createdAt: new Date(),
+                },
+                {
+                    id: "hazard2",
+                    type: "fire",
+                    location: { lat: 35.7792, lng: -78.6375 },
+                    severity: "High",
+                    details: "Active fire detected in residential area",
+                    createdBy: "Thermal Sensor",
+                    createdAt: new Date(),
+                },
+            ];
+            setHazards(fakeHazards);
+
+            // Fake drones data
+            const fakeDrones: Drone[] = [
+                {
+                    name: "Drone X123",
+                    isConnected: true,
+                    batteryLevel: 85,
+                    location: { lat: 35.7796, lng: -78.6382 },
+                    startingCoordinate: "35.7796, -78.6382",
+                    timestamp: new Date().toISOString(),
+                },
+                {
+                    name: "Drone Y456",
+                    isConnected: true,
+                    batteryLevel: 72,
+                    location: { lat: 35.7798, lng: -78.6385 },
+                    startingCoordinate: "35.7798, -78.6385",
+                    timestamp: new Date().toISOString(),
+                },
+            ];
+            setDrones(fakeDrones);
+        } else {
+            // Clear fake data when in real mode
+            setPersons([]);
+            setHazards([]);
+            setDrones([]);
+        }
+    }, [dataMode]);
 
     return (
         <div className="relative h-full w-full overflow-hidden bg-gray-100 text-gray-800">
@@ -833,12 +906,9 @@ export default function Page() {
                     center={center}
                     zoom={mapZoom}
                     setZoom={setMapZoom}
-                    currentLocation={
-                        true || isDronesDeployed ? currentLocation : null
-                    }
-                    persons={true || isDronesDeployed ? persons : []}
-                    hazards={true || isDronesDeployed ? hazards : []}
-                    drones={true || isDronesDeployed ? drones : []}
+                    persons={persons}
+                    hazards={hazards}
+                    drones={drones}
                     handlePersonClick={handlePersonClick}
                     handleHazardClick={handleHazardClick}
                     handleDroneClick={handleDroneClick}

@@ -7,9 +7,11 @@ authors = [
 ]
 dependencies = [
     "ultralytics>=8.3.17",
-    "singlestoredb>=1.7.2",
-    "uvicorn>=0.32.0",
+    "uagents>=0.16.2",
     "fastapi>=0.115.2",
+    "netifaces>=0.11.0",
+    "singlestoredb>=1.7.2",
+    "uvicorn>=0.30.1",
     "djitellopy>=2.5.0",
     "python-dotenv>=1.0.1",
 ]

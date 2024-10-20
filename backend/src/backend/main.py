@@ -13,6 +13,12 @@ import os
 from dotenv import load_dotenv
 from drone_agent import drone_agent, DroneData, DroneStatus, DetectedObject, DeployCommand, MoveCommand, DroneList
 from uagents import Context
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage, SystemMessage
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.prebuilt import create_react_agent
+from typing import List
 
 
 load_dotenv()
@@ -28,7 +34,8 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-torch.cuda.set_device(0)  # Set to your desired GPU number
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+torch.set_default_device(device)
 
 # SingleStore connection
 conn = singlestoredb.connect(
@@ -240,6 +247,145 @@ async def websocket_endpoint(websocket: WebSocket):
             await asyncio.sleep(0.1)
     except WebSocketDisconnect:
         print("WebSocket disconnected")
+        
+@app.websocket("/ws_agent")
+async def agent_websocket_endpoint(websocket: WebSocket):
+    """
+    WebSocket endpoint for handling agent interactions.
+    """
+    await websocket.accept()
+
+    # Define the system prompt
+    system_prompt = """You are an AI assistant for a search and rescue application. Your primary role is to support drone operators in mapping hazards and plotting safe routes.
+
+Key capabilities:
+1. Hazard reporting: You can analyze drone data and report potential hazards to the frontend interface.
+2. Route planning: Based on the id of the person in need of rescue and the list of hazards to avoid, you can suggest optimal routes for rescue teams.
+
+Your responses should be clear, concise, and focused on providing actionable information to the drone operators. Prioritize safety and efficiency in all recommendations. When providing information or suggestions, always consider the urgency of search and rescue operations.
+
+Remember, your guidance directly impacts the safety of both rescue teams and those in need of assistance. Maintain a professional and supportive tone at all times."""
+
+    # Define the tools within the WebSocket function
+    @tool
+    async def display_hazards(hazards: List[str]):
+        """
+        Display hazards on the map.
+
+        Args:
+            hazards: List of types of hazards to display on the map. One of the following: "all", "person", "fire", "tree", "power", "flood". Default is "all". If user says do not display any hazards, set hazards to empty list.
+        """
+        # Send the hazards back as JSON
+        await websocket.send_json({
+            "event": "display_hazards",
+            "hazards": hazards
+        })
+        return {"status": "success", "message": "Sent hazards to the frontend."}
+
+    @tool
+    async def plan_route(id: str, hazards: List[str]):
+        """
+        Plan a route to help people avoid hazards. You only need the id of the person in need of rescue and the list of hazards to avoid.
+
+        Args:
+            id: The ID of the person in need of rescue.
+            hazards: List of types of hazards to avoid. List of one or more of the following: "all", "person", "fire", "tree", "power", "flood". Default is empty list to signify no hazards avoided.
+        """
+        # Send the id and hazards back as JSON
+        await websocket.send_json({
+            "event": "plan_route",
+            "id": id,
+            "hazards": hazards
+        })
+        return {"status": "success", "message": "Route has been planned and sent to the frontend."}
+
+    # Initialize tools
+    tools = [display_hazards, plan_route]
+
+    # Initialize memory
+    memory = MemorySaver()
+
+    # Initialize the LLM
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-1.5-pro",
+        api_key=os.getenv("GEMINI_API_KEY"),
+        temperature=0.0
+    )
+
+    # Create the agent executor
+    agent_executor = create_react_agent(llm, tools, checkpointer=memory)
+
+    # Configuration for the agent
+    config = {"configurable": {"thread_id": "agent_ws_connection"}}
+
+    try:
+        while True:
+            try:
+                data = await asyncio.wait_for(websocket.receive_json(), timeout=120.0)
+                event = data.get("event")
+
+                if event == "query":
+                    user_message = data.get("message", "")
+                    if user_message:
+                        # Process the message through the agent
+                        async for event in agent_executor.astream_events(
+                            {
+                                "messages": [
+                                    HumanMessage(content=user_message)
+                                ]
+                            }, 
+                            config, 
+                            version="v1"
+                        ):
+                            kind = event.get("event")
+                            
+                            if kind == "on_chat_model_stream":
+                                
+                                content = event["data"]["chunk"].content
+                                if content:
+                                    # Stream the chunk back to the client as it arrives
+                                    await websocket.send_json({
+                                        "event": "chat_chunk",
+                                        "content": content
+                                    })
+                            elif kind == "on_tool_start":
+                                # Optionally handle tool start
+                                pass
+                            elif kind == "on_tool_end":
+                                # Optionally handle tool end
+                                pass
+                            elif kind == "on_chain_start":
+                                # Optionally handle chain start
+                                pass
+                            elif kind == "on_chain_end":
+                                # Optionally handle chain end
+                                pass
+
+                        # After streaming all chunks, you might want to send a final message
+                        await websocket.send_json({
+                            "event": "AGENT_RESPONSE_COMPLETE",
+                            "message": "Agent response complete."
+                        })
+                    else:
+                        await websocket.send_json({
+                            "event": "error",
+                            "message": "No message provided for AGENT_QUERY."
+                        })
+                else:
+                    await websocket.send_json({
+                        "event": "error",
+                        "message": "Unknown event type."
+                    })
+
+            except asyncio.TimeoutError:
+                await websocket.send_json({
+                    "event": "timeout",
+                    "message": "No message received in 120 seconds."
+                })
+            
+            await asyncio.sleep(0.1)
+    except WebSocketDisconnect:
+        print("Agent WebSocket disconnected")
 
 @app.get("/api/persons")
 async def get_persons():

@@ -485,6 +485,14 @@ export default function Page() {
                 stopover: true,
             }));
 
+            const hazardWaypoints = hazards.map((h) => ({
+                location: new google.maps.LatLng(
+                    h.location.lat,
+                    h.location.lng
+                ),
+                stopover: true,
+            }));
+
             directionsService.route(
                 {
                     origin: new google.maps.LatLng(
@@ -495,13 +503,26 @@ export default function Page() {
                         currentLocation.lat,
                         currentLocation.lng
                     ),
-                    waypoints: waypoints,
-                    optimizeWaypoints: true,
+                    waypoints: [...waypoints],
+                    // optimizeWaypoints: true,
                     travelMode: google.maps.TravelMode.WALKING,
+                    provideRouteAlternatives: true,
                 },
                 (result, status) => {
+                    // legitRoute = null
+                    // for (const route of result?.routes ?? []) {
+                    //     for (const wp of route.waypoint_order) {
+                    //         if
+                    //     }
+                    // }
+
+                    console.log(result?.routes);
+
                     if (status === google.maps.DirectionsStatus.OK && result) {
                         const route = result.routes[0].overview_path;
+
+                        console.log(result.routes[0]);
+
                         setRescueRoute(route);
                     }
                 }

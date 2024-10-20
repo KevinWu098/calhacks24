@@ -67,7 +67,7 @@ interface SplatViewerProps {
 
 export function SplatViewer({ splat, className }: SplatViewerProps) {
     return (
-        <div className={cn("h-full", className)}>
+        <div className={cn("h-full bg-black", className)}>
             <Canvas>
                 <OrbitControls />
 

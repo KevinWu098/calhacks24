@@ -51,12 +51,8 @@ with conn.cursor() as cursor:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS persons (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        confidence FLOAT,
-        bbox_x1 INT,
-        bbox_y1 INT,
-        bbox_x2 INT,
-        bbox_y2 INT,
-        image LONGTEXT,
+        location_lat FLOAT,
+        location_lng FLOAT,
         timestamp DATETIME
     )
     """)

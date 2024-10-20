@@ -32,9 +32,10 @@ import {
     Wifi,
     WifiOff,
 } from "lucide-react";
+import axios from 'axios';
 
 export interface Person {
-    id: string;
+    id: number;
     confidence: number;
     bbox: [number, number, number, number];
     image: string;
@@ -45,8 +46,8 @@ export interface Drone {
     name: string;
     isConnected: boolean;
     batteryLevel: number;
-    startingCoordinate: string;
     location: { lat: number; lng: number };
+    timestamp: string;
 }
 
 interface WebSocketData {
@@ -102,6 +103,7 @@ export default function Page() {
             batteryLevel: 85,
             startingCoordinate: "40.7128° N, 74.0060° W",
             location: { lat: 40.7128, lng: -74.006 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone Y456",
@@ -109,6 +111,7 @@ export default function Page() {
             batteryLevel: 72,
             startingCoordinate: "34.0522° N, 118.2437° W",
             location: { lat: 34.0522, lng: -118.2437 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone Z789",
@@ -116,6 +119,7 @@ export default function Page() {
             batteryLevel: 93,
             startingCoordinate: "51.5074° N, 0.1278° W",
             location: { lat: 51.5074, lng: -0.1278 },
+            timestamp: new Date().toISOString(),
         },
         {
             name: "Drone A012",
@@ -123,6 +127,7 @@ export default function Page() {
             batteryLevel: 64,
             startingCoordinate: "35.6762° N, 139.6503° E",
             location: { lat: 35.6762, lng: 139.6503 },
+            timestamp: new Date().toISOString(),
         },
     ];
 
@@ -158,6 +163,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone Y456",
@@ -168,6 +174,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone Z789",
@@ -178,6 +185,7 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone A012",
@@ -188,63 +196,34 @@ export default function Page() {
                         lat: center.lat + (Math.random() - 0.5) * 0.01,
                         lng: center.lng + (Math.random() - 0.5) * 0.01,
                     },
+                    timestamp: new Date().toISOString(),
                 },
             ];
         },
         []
     );
 
-    // Modify the useEffect for WebSocket to use real data when in "real" mode
+    // Modify the useEffect hook that fetches data
     useEffect(() => {
+        // fetch data from singlestore
         if (dataMode === "real") {
-            socket.onopen = () => {
-                console.log("WebSocket connection established");
-                setIsConnected(true);
+            const fetchData = async () => {
+                try {
+                    const [personsResponse, droneResponse] = await Promise.all([
+                        axios.get('http://localhost:8000/api/persons'),
+                        axios.get('http://localhost:8000/api/drone_status')
+                    ]);
+
+                    setPersons(personsResponse.data);
+                    setDrones([droneResponse.data]);
+                } catch (error) {
+                    console.error("Error fetching data:", error);
+                }
             };
 
-            socket.onmessage = (event) => {
-                const data: WebSocketData = JSON.parse(event.data);
-                setPersons((prevPersons) => {
-                    const lastPerson = data.persons[data.persons.length - 1];
-                    if (lastPerson) {
-                        return [
-                            {
-                                ...lastPerson,
-                                image: data.frame,
-                                timestamp: new Date().toLocaleTimeString(),
-                            },
-                        ];
-                    }
-                    return prevPersons;
-                });
-                setDroneFeed(data.frame);
+            const interval = setInterval(fetchData, 1000); // Fetch data every second
 
-                // Update drone status and battery level
-                setDrones((prevDrones) => {
-                    const existingDrone = prevDrones.find(
-                        (d) => d.name === data.droneStatus.name
-                    );
-                    if (existingDrone) {
-                        return prevDrones.map((drone) =>
-                            drone.name === data.droneStatus.name
-                                ? data.droneStatus
-                                : drone
-                        );
-                    } else {
-                        return [...prevDrones, data.droneStatus];
-                    }
-                });
-            };
-
-            socket.onclose = () => {
-                console.log("WebSocket connection closed");
-                setIsConnected(false);
-                setDrones([]);
-            };
-
-            return () => {
-                socket.close();
-            };
+            return () => clearInterval(interval); 
         }
     }, [dataMode]);
 
@@ -294,7 +273,7 @@ export default function Page() {
                             0,
                         ],
                         image: "",
-                        timestamp: new Date().toLocaleTimeString(),
+                        timestamp: new Date().toISOString(),
                     }));
 
                 setPersons(newPersons);

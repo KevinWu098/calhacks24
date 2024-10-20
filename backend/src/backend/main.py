@@ -9,7 +9,7 @@ import json
 from djitellopy import Tello
 import base64
 import time
-import singlestore
+import singlestoredb
 import os
 from dotenv import load_dotenv
 
@@ -26,14 +26,14 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-torch.cuda.set_device(0)  # Set to your desired GPU number
+torch.device('cpu')  # Set to use CPU
 
 model = YOLO('yolo11x.pt')
 
 tello = None
 
 # SingleStore connection
-conn = singlestore.connect(
+conn = singlestoredb.connect(
     host=os.getenv('SINGLESTORE_HOST'),
     port=int(os.getenv('SINGLESTORE_PORT')),
     user=os.getenv('SINGLESTORE_USER'),
@@ -206,7 +206,7 @@ async def websocket_endpoint(websocket: WebSocket):
 async def get_persons():
     try:
         with conn.cursor() as cursor:
-            cursor.execute("SELECT * FROM persons ORDER BY timestamp DESC LIMIT 10") # 
+            cursor.execute("SELECT * FROM persons ORDER BY timestamp DESC LIMIT 10")
             persons = cursor.fetchall()
         return [{"id": p[0], "confidence": p[1], "bbox": p[2:6], "image": p[6], "timestamp": p[7]} for p in persons]
     except Exception as e:

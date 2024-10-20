@@ -33,11 +33,6 @@ export function Nav({ isConnected, dataMode, toggleDataMode }: HeaderProps) {
 
                 <div className="flex h-7 flex-row items-center space-x-1 rounded-sm bg-gray-600 p-2">
                     <MapPinIcon className="size-4 stroke-white" />
-                    <p className="text-sm text-white">Satellite</p>
-                </div>
-
-                <div className="flex h-7 flex-row items-center space-x-1 rounded-sm bg-gray-600 p-2">
-                    <MapPinIcon className="size-4 stroke-white" />
                     <p className="text-sm text-white">Depth Imagery</p>
                 </div>
 

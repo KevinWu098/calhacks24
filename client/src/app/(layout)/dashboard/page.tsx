@@ -235,67 +235,65 @@ export default function Page() {
     }, [dataMode]);
 
     // Update the useEffect for setting hazards and persons
-    useEffect(() => {
-        if (currentLocation) {
-            if (dataMode === "fake") {
-                // Set hazards with adjusted offsets
-                setHazards([
-                    {
-                        type: "power",
-                        location: {
-                            lat: center.lat - 0.003,
-                            lng: center.lng + 0.0024,
-                        },
-                        severity: "Low",
-                        details: "",
-                        createdBy: "",
-                        createdAt: new Date(),
-                        id: crypto.randomUUID(),
-                    },
-                    {
-                        type: "fire",
-                        location: {
-                            lat: center.lat + 0.0,
-                            lng: center.lng - 0.0095,
-                        },
-                        severity: "Critical",
-                        details: "",
-                        createdBy: "",
-                        createdAt: new Date(),
-                        id: crypto.randomUUID(),
-                    },
-                ]);
+    // useEffect(() => {
+    //     if (dataMode === "fake") {
+    //         // Set hazards with adjusted offsets
+    //         setHazards([
+    //             {
+    //                 type: "power",
+    //                 location: {
+    //                     lat: center.lat - 0.003,
+    //                     lng: center.lng + 0.0024,
+    //                 },
+    //                 severity: "Low",
+    //                 details: "",
+    //                 createdBy: "",
+    //                 createdAt: new Date(),
+    //                 id: crypto.randomUUID(),
+    //             },
+    //             {
+    //                 type: "fire",
+    //                 location: {
+    //                     lat: center.lat + 0.0,
+    //                     lng: center.lng - 0.0095,
+    //                 },
+    //                 severity: "Critical",
+    //                 details: "",
+    //                 createdBy: "",
+    //                 createdAt: new Date(),
+    //                 id: crypto.randomUUID(),
+    //             },
+    //         ]);
 
-                // Set fake drones around the current location
-                setDrones(generateFakeDrones(center));
+    //         // Set fake drones around the current location
+    //         setDrones(generateFakeDrones(center));
 
-                // Set persons with adjusted offsets
-                const newPersons: Person[] = [
-                    {
-                        id: "person1",
-                        confidence: 0.95,
-                        bbox: [center.lat + 0.002, center.lng - 0.012, 0, 0],
-                        image: "",
-                        timestamp: new Date().toISOString(),
-                    },
-                    {
-                        id: "person2",
-                        confidence: 0.95,
-                        bbox: [center.lat - 0.005, center.lng + 0.0026, 0, 0],
-                        image: "",
-                        timestamp: new Date().toISOString(),
-                    },
-                ];
+    //         // Set persons with adjusted offsets
+    //         const newPersons: Person[] = [
+    //             {
+    //                 id: crypto.randomUUID(),
+    //                 confidence: 0.95,
+    //                 bbox: [center.lat + 0.002, center.lng - 0.012, 0, 0],
+    //                 image: "",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //             {
+    //                 id: crypto.randomUUID(),
+    //                 confidence: 0.95,
+    //                 bbox: [center.lat - 0.005, center.lng + 0.0026, 0, 0],
+    //                 image: "",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //         ];
 
-                setPersons(newPersons);
-            } else {
-                // Clear fake data when in real mode
-                setHazards([]);
-                setPersons([]);
-                setDrones([]);
-            }
-        }
-    }, [center, dataMode, generateFakeDrones]);
+    //         // setPersons(newPersons);
+    //     } else {
+    //         // Clear fake data when in real mode
+    //         setHazards([]);
+    //         setPersons([]);
+    //         setDrones([]);
+    //     }
+    // }, [center, dataMode, generateFakeDrones]);
 
     // Modify the toggle function for data mode
     const toggleDataMode = useCallback(() => {
@@ -305,9 +303,9 @@ export default function Page() {
     // Add this useEffect to set the currentLocation to the center
     useEffect(() => {
         setCurrentLocation(center);
-        if (dataMode === "fake") {
-            setDrones(generateFakeDrones(center));
-        }
+        // if (dataMode === "fake") {
+        //     setDrones(generateFakeDrones(center));
+        // }
     }, [center, dataMode, generateFakeDrones]);
 
     useEffect(() => {
@@ -418,24 +416,161 @@ export default function Page() {
             smoothZoom(mapRef, 15, mapRef.getZoom() as number);
         }
 
-        if (dataMode === "fake") {
-            // For fake mode, immediately set the drones
-            setDrones(generateFakeDrones(currentLocation!));
-        } else {
-            // For real mode, simulate drone deployment (keep existing logic)
-            setTimeout(() => {
-                setDrones((prevDrones) =>
-                    prevDrones.map((drone) => ({ ...drone, isConnected: true }))
-                );
-            }, 1000);
-        }
+        // Generate all data here
+        const newCenter = currentLocation || center;
+        const newData = generateSimulationData(newCenter);
 
-        socket.send(
-            JSON.stringify({
-                event: "DEPLOY",
-            })
-        );
-    }, [currentLocation, dataMode, generateFakeDrones, mapRef]);
+        setHazards(newData.hazards);
+        setPersons(newData.persons);
+        setDrones(newData.drones);
+
+        if (dataMode === "real") {
+            socket.send(
+                JSON.stringify({
+                    event: "DEPLOY",
+                })
+            );
+        }
+    }, [currentLocation, dataMode, mapRef, center, socket]);
+
+    useEffect(() => {
+        const newCenter = currentLocation || center;
+        const newData = generateSimulationData(newCenter);
+
+        setHazards(newData.hazards);
+        setPersons(newData.persons);
+        setDrones(newData.drones);
+    }, []);
+
+    // Add this new function to generate simulation data
+    const generateSimulationData = (center: { lat: number; lng: number }) => {
+        const hazardOffset1 = { lat: 0.005, lng: 0.007 };
+        const hazardOffset2 = { lat: -0.003, lng: 0.006 };
+        const hazardOffset3 = { lat: 0, lng: 0.003 }; // New fire offset
+        const personOffset1 = { lat: 0.002, lng: -0.004 };
+        const personOffset2 = { lat: -0.006, lng: 0.003 };
+        const personOffset3 = { lat: 0.002, lng: 0.01 }; // New person offset
+        const personOffset4 = { lat: -0.006, lng: -0.003 }; // New person offset
+        const droneOffset1 = { lat: 0.004, lng: 0.005 };
+        const droneOffset2 = { lat: -0.005, lng: -0.002 };
+
+        const hazards: Hazard[] = [
+            {
+                id: "hazard1",
+                type: "power",
+                location: {
+                    lat: center.lat + hazardOffset1.lat,
+                    lng: center.lng + hazardOffset1.lng,
+                },
+                severity: "Moderate",
+                details: "Potential structural damage detected",
+                createdBy: "AI System",
+                createdAt: new Date(),
+            },
+            {
+                id: "hazard2",
+                type: "fire",
+                location: {
+                    lat: center.lat + hazardOffset2.lat,
+                    lng: center.lng + hazardOffset2.lng,
+                },
+                severity: "High",
+                details: "Active fire detected in residential area",
+                createdBy: "Thermal Sensor",
+                createdAt: new Date(),
+            },
+            {
+                id: "hazard3",
+                type: "fire",
+                location: {
+                    lat: center.lat + hazardOffset3.lat,
+                    lng: center.lng + hazardOffset3.lng,
+                },
+                severity: "Critical",
+                details: "Large fire spreading rapidly",
+                createdBy: "Drone Camera",
+                createdAt: new Date(),
+            },
+        ];
+
+        const persons: Person[] = [
+            {
+                id: crypto.randomUUID(),
+                confidence: 0.95,
+                bbox: [
+                    center.lat + personOffset1.lat,
+                    center.lng + personOffset1.lng,
+                    0,
+                    0,
+                ],
+                image: "",
+                timestamp: new Date().toISOString(),
+            },
+            {
+                id: crypto.randomUUID(),
+                confidence: 0.88,
+                bbox: [
+                    center.lat + personOffset2.lat,
+                    center.lng + personOffset2.lng,
+                    0,
+                    0,
+                ],
+                image: "",
+                timestamp: new Date().toISOString(),
+            },
+            {
+                id: crypto.randomUUID(),
+                confidence: 0.92,
+                bbox: [
+                    center.lat + personOffset3.lat,
+                    center.lng + personOffset3.lng,
+                    0,
+                    0,
+                ],
+                image: "",
+                timestamp: new Date().toISOString(),
+            },
+            {
+                id: crypto.randomUUID(),
+                confidence: 0.85,
+                bbox: [
+                    center.lat + personOffset4.lat,
+                    center.lng + personOffset4.lng,
+                    0,
+                    0,
+                ],
+                image: "",
+                timestamp: new Date().toISOString(),
+            },
+        ];
+
+        const drones: Drone[] = [
+            {
+                name: "Drone X123",
+                isConnected: true,
+                batteryLevel: 85,
+                location: {
+                    lat: center.lat + droneOffset1.lat,
+                    lng: center.lng + droneOffset1.lng,
+                },
+                startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                timestamp: new Date().toISOString(),
+            },
+            {
+                name: "Drone Y456",
+                isConnected: true,
+                batteryLevel: 72,
+                location: {
+                    lat: center.lat + droneOffset2.lat,
+                    lng: center.lng + droneOffset2.lng,
+                },
+                startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                timestamp: new Date().toISOString(),
+            },
+        ];
+
+        return { hazards, persons, drones };
+    };
 
     const getSeverityColor = (severity: Hazard["severity"]) => {
         switch (severity) {
@@ -648,84 +783,101 @@ export default function Page() {
     );
 
     // Load fake data
-    useEffect(() => {
-        if (dataMode === "fake") {
-            // Fake persons data with adjusted coordinates
-            const fakePersons: Person[] = [
-                {
-                    id: "person1",
-                    confidence: 0.95,
-                    bbox: [35.7806, -78.6392, 0, 0], // Slightly northwest of center
-                    image: "base64_encoded_image_data_here",
-                    timestamp: new Date().toISOString(),
-                },
-                {
-                    id: "person2",
-                    confidence: 0.88,
-                    bbox: [35.7786, -78.6372, 0, 0], // Slightly southeast of center
-                    image: "base64_encoded_image_data_here",
-                    timestamp: new Date().toISOString(),
-                },
-                {
-                    id: "person3",
-                    confidence: 0.92,
-                    bbox: [35.7801, -78.6362, 0, 0], // Slightly east of center
-                    image: "base64_encoded_image_data_here",
-                    timestamp: new Date().toISOString(),
-                },
-            ];
-            setPersons(fakePersons);
+    // useEffect(() => {
+    //     if (dataMode === "fake") {
+    //         // Fake persons data with more spread out coordinates
+    //         const fakePersons: Person[] = [
+    //             {
+    //                 id: "person1",
+    //                 confidence: 0.95,
+    //                 bbox: [35.7826, -78.6412, 0, 0], // Northwest of center
+    //                 image: "base64_encoded_image_data_here",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //             {
+    //                 id: "person2",
+    //                 confidence: 0.88,
+    //                 bbox: [35.7766, -78.6352, 0, 0], // Southeast of center
+    //                 image: "base64_encoded_image_data_here",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //             {
+    //                 id: "person3",
+    //                 confidence: 0.92,
+    //                 bbox: [35.7811, -78.6332, 0, 0], // East of center
+    //                 image: "base64_encoded_image_data_here",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //         ];
+    //         // setPersons(fakePersons);
 
-            // Fake hazards data with adjusted coordinates
-            const fakeHazards: Hazard[] = [
-                {
-                    id: "hazard1",
-                    type: "power",
-                    location: { lat: 35.7816, lng: -78.6402 }, // Northwest of center
-                    severity: "Moderate",
-                    details: "Potential structural damage detected",
-                    createdBy: "AI System",
-                    createdAt: new Date(),
-                },
-                {
-                    id: "hazard2",
-                    type: "fire",
-                    location: { lat: 35.7776, lng: -78.6362 }, // Southeast of center
-                    severity: "High",
-                    details: "Active fire detected in residential area",
-                    createdBy: "Thermal Sensor",
-                    createdAt: new Date(),
-                },
-            ];
-            setHazards(fakeHazards);
+    //         // Fake hazards data with more spread out coordinates
+    //         const fakeHazards: Hazard[] = [
+    //             {
+    //                 id: "hazard1",
+    //                 type: "power",
+    //                 location: { lat: 35.7836, lng: -78.6422 }, // Northwest of center
+    //                 severity: "Moderate",
+    //                 details: "Potential structural damage detected",
+    //                 createdBy: "AI System",
+    //                 createdAt: new Date(),
+    //             },
+    //             {
+    //                 id: "hazard2",
+    //                 type: "fire",
+    //                 location: { lat: 35.7756, lng: -78.6342 }, // Southeast of center
+    //                 severity: "High",
+    //                 details: "Active fire detected in residential area",
+    //                 createdBy: "Thermal Sensor",
+    //                 createdAt: new Date(),
+    //             },
+    //             {
+    //                 id: "hazard3",
+    //                 type: "power",
+    //                 location: { lat: 35.7816, lng: -78.6302 }, // East of center
+    //                 severity: "Low",
+    //                 details: "Minor electrical issue reported",
+    //                 createdBy: "Ground Team",
+    //                 createdAt: new Date(),
+    //             },
+    //         ];
+    //         setHazards(fakeHazards);
 
-            // Fake drones data with adjusted coordinates
-            const fakeDrones: Drone[] = [
-                {
-                    name: "Drone X123",
-                    isConnected: true,
-                    batteryLevel: 85,
-                    location: { lat: 35.7806, lng: -78.6372 }, // Northeast of center
-                    startingCoordinate: "35.7806, -78.6372",
-                    timestamp: new Date().toISOString(),
-                },
-                {
-                    name: "Drone Y456",
-                    isConnected: true,
-                    batteryLevel: 72,
-                    location: { lat: 35.7786, lng: -78.6392 }, // Southwest of center
-                    startingCoordinate: "35.7786, -78.6392",
-                    timestamp: new Date().toISOString(),
-                },
-            ];
-            setDrones(fakeDrones);
-        } else {
-            // Clear fake data when in real mode
-            setPersons([]);
-            setHazards([]);
-            setDrones([]);
-        }
-    }, [dataMode]);
+    //         // Fake drones data with more spread out coordinates
+    //         const fakeDrones: Drone[] = [
+    //             {
+    //                 name: "Drone X123",
+    //                 isConnected: true,
+    //                 batteryLevel: 85,
+    //                 location: { lat: 35.7826, lng: -78.6352 }, // Northeast of center
+    //                 startingCoordinate: "35.7826, -78.6352",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //             {
+    //                 name: "Drone Y456",
+    //                 isConnected: true,
+    //                 batteryLevel: 72,
+    //                 location: { lat: 35.7766, lng: -78.6412 }, // Southwest of center
+    //                 startingCoordinate: "35.7766, -78.6412",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //             {
+    //                 name: "Drone Z789",
+    //                 isConnected: true,
+    //                 batteryLevel: 93,
+    //                 location: { lat: 35.7796, lng: -78.6322 }, // East of center
+    //                 startingCoordinate: "35.7796, -78.6322",
+    //                 timestamp: new Date().toISOString(),
+    //             },
+    //         ];
+    //         setDrones(fakeDrones);
+    //     } else {
+    //         // Clear fake data when in real mode
+    //         setPersons([]);
+    //         setHazards([]);
+    //         setDrones([]);
+    //     }
+    // }, [dataMode]);
 
     const handleFloatingHazardClick = (type: "warning" | "fire") => {
         const hazard = hazards.find((h) => h.type === type);
@@ -803,6 +955,7 @@ export default function Page() {
                             <Details
                                 detailId="foo" // ! FIX ME
                                 handleClose={handleCloseHumanPanel}
+                                person={selectedPersons[0]}
                             />
                             <RescueWorkflow
                                 rescueTime={persons.length * 8}

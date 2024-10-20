@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Person } from "@/app/(layout)/dashboard/page";
 import { SplatViewer } from "@/components/splat/splat-viewer";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -8,9 +9,10 @@ import { X } from "lucide-react";
 interface DetailsProps {
     detailId: string;
     handleClose: VoidFunction;
+    person: Person;
 }
 
-export function Details({ detailId, handleClose }: DetailsProps) {
+export function Details({ detailId, handleClose, person }: DetailsProps) {
     return (
         <div className="max-w-[500px] space-y-2 rounded-sm border-2 border-gray-400 bg-white p-3">
             <div className="space-y-1">
@@ -44,9 +46,7 @@ export function Details({ detailId, handleClose }: DetailsProps) {
 
                 <div className="flex-between">
                     <div>
-                        <p className="text-xl font-semibold">
-                            Human in the forest
-                        </p>
+                        <p className="text-xl font-semibold">Trapped Person</p>
                         <p className="text-gray-500">ID: HUM423</p>
                     </div>
 
@@ -61,7 +61,8 @@ export function Details({ detailId, handleClose }: DetailsProps) {
                             Location
                         </p>
                         <p className="line-clamp-1 text-ellipsis text-lg font-semibold leading-none">
-                            37.7843° N, 122.4034° W
+                            {person.bbox[0].toFixed(4)}° N,{" "}
+                            {person.bbox[1].toFixed(4)}° W
                         </p>
                     </div>
                     <div className="space-y-1">
@@ -88,8 +89,8 @@ export function Details({ detailId, handleClose }: DetailsProps) {
             <div className="space-y-1">
                 <p className="text-lg leading-none text-gray-500">Details</p>
                 <p className="max-w-[500px] text-lg font-semibold leading-none">
-                    Human appears to be trapped inside of a home. The
-                    neighboring power lines appear to be down.
+                    Human appears to be trapped atop a home. The region is
+                    partially flooded.
                 </p>
             </div>
         </div>

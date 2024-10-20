@@ -1,31 +1,50 @@
 import { Separator } from "@/components/ui/separator";
 
-export function RescueWorkflow() {
+interface RescueWorkflowProps {
+    rescueTime: number;
+    accuracy: number;
+}
+
+export function RescueWorkflow({ rescueTime, accuracy }: RescueWorkflowProps) {
+    const formatTime = (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const remainingMinutes = Math.round(minutes % 60);
+        return hours > 0
+            ? `${hours} hr ${remainingMinutes} min`
+            : `${remainingMinutes} min`;
+    };
+
     return (
-        <div className="h-full w-[250px] rounded-md border-2 border-gray-400 bg-white p-3">
+        <div className="w-full max-w-[500px] rounded-md border-2 border-gray-400 bg-white p-3">
             <div>
                 <p className="font-semibold">Rescue Workflow</p>
-                <Separator className="" />
+                <Separator className="my-2" />
             </div>
 
-            <div className="space-y-4 py-4">
-                <div className="flex h-5 w-fit items-center rounded-sm bg-[#DBF2D9] p-3 text-sm font-medium text-[#289223]">
+            <div className="grid grid-cols-3 gap-4 py-4">
+                <div className="col-span-3 flex h-8 w-fit items-center justify-center rounded-sm bg-[#DBF2D9] px-3 text-sm font-medium text-[#289223]">
                     On Time
                 </div>
 
                 <div className="space-y-1">
-                    <p className="leading-none text-gray-400">Total Time</p>
-                    <p className="text-xl font-bold leading-none">26 min</p>
-                </div>
-                <div className="space-y-1">
-                    <p className="leading-none text-gray-400">Accuracy</p>
+                    <p className="text-sm leading-none text-gray-400">
+                        Estimated Time
+                    </p>
                     <p className="text-xl font-bold leading-none">
-                        95% accuracy
+                        {formatTime(rescueTime)}
                     </p>
                 </div>
                 <div className="space-y-1">
-                    <p className="leading-none text-gray-400">Total Time</p>
-                    <p className="text-xl font-bold leading-none">26 min</p>
+                    <p className="text-sm leading-none text-gray-400">
+                        Accuracy
+                    </p>
+                    <p className="text-xl font-bold leading-none">
+                        {accuracy}%
+                    </p>
+                </div>
+                <div className="space-y-1">
+                    <p className="text-sm leading-none text-gray-400">Status</p>
+                    <p className="text-xl font-bold leading-none">Active</p>
                 </div>
             </div>
 

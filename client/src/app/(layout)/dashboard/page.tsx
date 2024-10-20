@@ -15,7 +15,7 @@ import { RescueWorkflow } from "@/components/dashboard/rescue/rescue-workflow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
+import { calculateRescueTime, cn } from "@/lib/utils";
 import axios from "axios";
 import {
     AlertTriangle,
@@ -98,6 +98,8 @@ export default function Page() {
     const [displayedHazards, setDisplayedHazards] = useState<string[]>([]);
     const [avoidedHazards, setAvoidedHazards] = useState<string[]>([]);
     const [mapInstance, setMapInstance] = useState<H.Map | null>(null);
+    const [rescueTime, setRescueTime] = useState<number | null>(null);
+    const [rescueAccuracy, setRescueAccuracy] = useState<number>(95); // Default accuracy
 
     // Add fake data
     const fakeDrones: Drone[] = [
@@ -541,6 +543,16 @@ export default function Page() {
                                 zoom: 16,
                             });
                         });
+
+                        // Calculate and set the rescue time
+                        const totalDistance = result.routes[0].sections.reduce(
+                            (acc: number, section: any) =>
+                                acc + section.summary.length,
+                            0
+                        );
+                        const estimatedTime =
+                            calculateRescueTime(totalDistance);
+                        setRescueTime(estimatedTime);
                     }
                 };
 
@@ -767,9 +779,11 @@ export default function Page() {
                                 detailId="foo" // ! FIX ME
                                 handleClose={handleCloseHumanPanel}
                             />
-                            <NearbyHazards />
+                            <RescueWorkflow
+                                rescueTime={persons.length * 8}
+                                accuracy={rescueAccuracy}
+                            />
                         </div>
-                        <RescueWorkflow />
                     </div>
                 ) : null}
 

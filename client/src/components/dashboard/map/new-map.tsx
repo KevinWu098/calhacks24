@@ -108,17 +108,6 @@ export const HereMap = ({
                 }
             });
 
-            if (_center) {
-                const centerMarker = new H.map.Marker(_center);
-
-                centerMarker.setData("marker");
-                centerMarker.addEventListener("tap", () => {
-                    handleDroneClick("You");
-                });
-
-                map.current.addObject(centerMarker);
-            }
-
             persons.forEach((person) => {
                 const icon = new H.map.Icon("/location-man.svg", {
                     size: { w: 32, h: 32 },

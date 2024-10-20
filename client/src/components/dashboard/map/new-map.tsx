@@ -1,18 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef } from "react";
+import { Drone, Hazard, Person } from "@/app/(layout)/dashboard/page";
 import H from "@here/maps-api-for-javascript";
-
-interface Hazard {
-    id: string;
-    location: { lat: number; lng: number };
-    type: string;
-}
-
-interface Person {
-    id: string;
-    bbox: [number, number];
-}
+import { FlameIcon } from "lucide-react";
 
 interface MapProps {
     apikey: string;
@@ -22,14 +13,11 @@ interface MapProps {
     currentLocation: { lat: number; lng: number } | null;
     persons: Person[];
     hazards: Hazard[];
-    planHereRoute: (map, route) => void;
-    drones: { name: string; location: { lat: number; lng: number } }[];
+    planHereRoute: (map: any, route: any) => void;
+    drones: Drone[];
     handlePersonClick: (person: Person) => void;
     handleHazardClick: (hazard: Hazard) => void;
     handleDroneClick: (droneName: string) => void;
-    rescueRoute: { lat: number; lng: number }[];
-    selectMode: boolean;
-    selectedPersons: Person[];
 }
 
 export const HereMap = ({
@@ -59,7 +47,7 @@ export const HereMap = ({
                 apikey: apikey,
             });
 
-            const defaultLayers = platform.current.createDefaultLayers();
+            const defaultLayers: any = platform.current.createDefaultLayers();
 
             // Create a new map instance
             map.current = new H.Map(

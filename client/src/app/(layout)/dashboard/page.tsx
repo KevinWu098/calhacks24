@@ -455,6 +455,7 @@ export default function Page() {
         const personOffset4 = { lat: -0.006, lng: -0.003 }; // New person offset
         const droneOffset1 = { lat: 0.004, lng: 0.005 };
         const droneOffset2 = { lat: -0.005, lng: -0.002 };
+        const droneOffset3 = { lat: 0.0004, lng: 0.007 };
 
         const hazards: Hazard[] = [
             {
@@ -569,6 +570,18 @@ export default function Page() {
                 startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
                 timestamp: new Date().toISOString(),
             },
+            {
+                name: "Drone Z789",
+                isConnected: true,
+                batteryLevel: 93,
+                location: {
+                    lat: center.lat + droneOffset3.lat,
+                    lng: center.lng + droneOffset3.lng,
+                },
+                startingCoordinate: `${center.lat.toFixed(4)}° N, ${center.lng.toFixed(4)}° W`,
+                timestamp: new Date().toISOString(),
+            },
+
         ];
 
         return { hazards, persons, drones };
@@ -1141,8 +1154,8 @@ export default function Page() {
                         <button
                             key={index}
                             className={`rounded-full p-2 ${hazardType === "power"
-                                    ? "bg-yellow-500"
-                                    : "bg-red-500"
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
                                 } text-white`}
                             onClick={() =>
                                 handleFloatingHazardClick(

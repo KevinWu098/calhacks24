@@ -35,3 +35,8 @@ final_dataset
 **/.env
 
 .env
+
+*.env
+
+datasets
+final_dataset

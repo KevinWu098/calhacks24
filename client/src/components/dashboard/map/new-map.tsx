@@ -55,11 +55,8 @@ export const HereMap = ({
                 mapRef.current,
                 defaultLayers.vector.normal.map, // Use vector map layer
                 {
-                    zoom: 15,
-                    center: {
-                        lat: 37.776, // Center the map between the two markers
-                        lng: -122.391,
-                    },
+                    zoom: 14, // Adjust initial zoom level
+                    center: _center, // Use the provided center
                 }
             );
 
@@ -83,7 +80,7 @@ export const HereMap = ({
                 map.current = null;
             }
         };
-    }, [apikey, setZoom]);
+    }, [apikey, setZoom, _center]);
 
     // Pan to center when it changes
     useEffect(() => {

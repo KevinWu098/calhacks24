@@ -610,38 +610,38 @@ export default function Page() {
     // Load fake data
     useEffect(() => {
         if (dataMode === "fake") {
-            // Fake persons data
+            // Fake persons data with adjusted coordinates
             const fakePersons: Person[] = [
                 {
                     id: "person1",
                     confidence: 0.95,
-                    bbox: [35.7796, -78.6382, 0, 0],
+                    bbox: [35.7806, -78.6392, 0, 0], // Slightly northwest of center
                     image: "base64_encoded_image_data_here",
                     timestamp: new Date().toISOString(),
                 },
                 {
                     id: "person2",
                     confidence: 0.88,
-                    bbox: [35.7798, -78.6385, 0, 0],
+                    bbox: [35.7786, -78.6372, 0, 0], // Slightly southeast of center
                     image: "base64_encoded_image_data_here",
                     timestamp: new Date().toISOString(),
                 },
                 {
                     id: "person3",
                     confidence: 0.92,
-                    bbox: [35.7794, -78.638, 0, 0],
+                    bbox: [35.7801, -78.6362, 0, 0], // Slightly east of center
                     image: "base64_encoded_image_data_here",
                     timestamp: new Date().toISOString(),
                 },
             ];
             setPersons(fakePersons);
 
-            // Fake hazards data
+            // Fake hazards data with adjusted coordinates
             const fakeHazards: Hazard[] = [
                 {
                     id: "hazard1",
                     type: "warning",
-                    location: { lat: 35.78, lng: -78.639 },
+                    location: { lat: 35.7816, lng: -78.6402 }, // Northwest of center
                     severity: "Moderate",
                     details: "Potential structural damage detected",
                     createdBy: "AI System",
@@ -650,7 +650,7 @@ export default function Page() {
                 {
                     id: "hazard2",
                     type: "fire",
-                    location: { lat: 35.7792, lng: -78.6375 },
+                    location: { lat: 35.7776, lng: -78.6362 }, // Southeast of center
                     severity: "High",
                     details: "Active fire detected in residential area",
                     createdBy: "Thermal Sensor",
@@ -659,22 +659,22 @@ export default function Page() {
             ];
             setHazards(fakeHazards);
 
-            // Fake drones data
+            // Fake drones data with adjusted coordinates
             const fakeDrones: Drone[] = [
                 {
                     name: "Drone X123",
                     isConnected: true,
                     batteryLevel: 85,
-                    location: { lat: 35.7796, lng: -78.6382 },
-                    startingCoordinate: "35.7796, -78.6382",
+                    location: { lat: 35.7806, lng: -78.6372 }, // Northeast of center
+                    startingCoordinate: "35.7806, -78.6372",
                     timestamp: new Date().toISOString(),
                 },
                 {
                     name: "Drone Y456",
                     isConnected: true,
                     batteryLevel: 72,
-                    location: { lat: 35.7798, lng: -78.6385 },
-                    startingCoordinate: "35.7798, -78.6385",
+                    location: { lat: 35.7786, lng: -78.6392 }, // Southwest of center
+                    startingCoordinate: "35.7786, -78.6392",
                     timestamp: new Date().toISOString(),
                 },
             ];
